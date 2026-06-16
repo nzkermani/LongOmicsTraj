@@ -1,0 +1,35 @@
+Package: LongOmicsTraj
+Type: Package
+Title: Longitudinal Omics Trajectory Clustering and Analysis Engine
+Version: 0.99.0
+Authors@R: c(
+    person("Jenny", "LastName", email = "jenny.email@example.com", 
+    role = c("aut", "cre"))
+  )
+Description: A robust S4 framework built to ingest MultiAssayExperiment 
+    objects for downstream longitudinal trajectory modeling, cluster 
+    concordance checking, and time-series omics integration.
+License: GPL-3
+Encoding: UTF-8
+Depends:
+    R (>= 4.4.0),
+    MultiAssayExperiment,
+    SummarizedExperiment
+Imports:
+    methods,
+    S4Vectors,
+    matrixStats,
+    cluster,
+    ggplot2,
+    dplyr,
+    tidyr
+Suggests: 
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    BiocStyle
+VignetteBuilder: knitr
+biocViews: Software, TimeCourse, Transcriptomics, Clustering, SystemsBiology
+BugReports: https://github.com
+URL: https://github.com
+Config/roxygen2/version: 8.0.0

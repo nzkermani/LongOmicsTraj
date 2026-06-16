@@ -1,0 +1,22 @@
+#' Cleaned Longitudinal Transcriptomics Dataset from GLUCOLD Study
+#'
+#' A pre-processed \code{LongOmicsTraj} object containing an integrated 
+#' MultiAssayExperiment of 71 candidate and hypothesis-driven genes across 
+#' longitudinal milestones from the GLUCOLD (Groningen Longitudinal COPD 
+#' Lung Inflammatory Disease) study.
+#'
+#' @format A \code{\linkS4class{LongOmicsTraj}} object containing a 
+#' \code{MultiAssayExperiment} with one assay slot named \code{"transcriptomics"}.
+#' The internal \code{colData} matrix contains 6 metadata trackers:
+#' \descrip{
+#'   \item{sample_id}{Character. Unique identifier for each sample specimen.}
+#'   \item{subject_id}{Character. Unique tracking identifier for each individual patient.}
+#'   \item{visit}{Factor. Chronological trial milestone (Baseline, 6 Months, 30 Months).}
+#'   \item{group}{Factor. Refined treatment allocation assignment group.}
+#'   \item{time}{Factor. Ordinal representation of trial duration in months (0, 6, 30).}
+#'   \item{treatment}{Factor. Raw clinical medication allocation (Placebo, Fluticasone, etc.).}
+#' }
+#' @source Publicly available NCBI GEO deposition GSE36221, pre-processed 
+#' for specific airway remodelation and glucocorticoid pathway objectives.
+#' @usage data(lot_glucold)
+"lot_glucold"
