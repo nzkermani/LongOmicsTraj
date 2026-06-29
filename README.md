@@ -25,6 +25,9 @@ Most methods answer:
 > **“Which genes share the same trajectory topology?”**
 
 ---
+<p align="center">
+  <img src="figures/LongOmicsTraj_overview.png" width="1000">
+</p>
 
 ## ⚙️ Workflow
 
@@ -106,9 +109,7 @@ devtools::install_github("nzkermani/LongOmicsTraj")
 Nazanin Zounemat-Kermani
 Imperial College London
 
-<p align="center">
-  <img src="figures/LongOmicsTraj_overview.png" width="1000">
-</p>
+
 
 
 ...
