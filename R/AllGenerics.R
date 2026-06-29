@@ -113,3 +113,8 @@ setGeneric("lot_from_clusters", function(object, ...) {
 setGeneric("lot_compute_deltas", function(object, ...) {
   standardGeneric("lot_compute_deltas")
 })
+setGeneric(
+  "lot_from_empirical",
+  function(object, assay, visits, ...)
+    standardGeneric("lot_from_empirical")
+)

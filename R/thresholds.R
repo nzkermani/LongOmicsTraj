@@ -1,3 +1,4 @@
+#' @export
 setMethod(
   "lot_compute_thresholds",
   "LongOmicsTraj",

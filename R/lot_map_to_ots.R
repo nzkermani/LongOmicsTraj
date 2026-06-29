@@ -1,4 +1,4 @@
-
+#' @export
 .compute_ots <- function(deltas, thresholds) {
 
   required_deltas <- c(

@@ -1,12 +1,13 @@
+#' @export
 setMethod(
   "lot_from_empirical",
   "LongOmicsTraj",
   function(
     object,
     assay,
+    visits,               
     group_col = "group",
     visit_col = "visit",
-    visits,
     estimator = "empirical",
     overwrite = FALSE,
     verbose = TRUE
@@ -25,12 +26,28 @@ setMethod(
     meta <- as.data.frame(SummarizedExperiment::colData(se))
 
     required_meta <- c(group_col, visit_col)
-    missing_meta <- setdiff(required_meta, colnames(meta))
-
-    if (length(missing_meta) > 0) {
+    # ------------------------------------------------------------
+    # Correct validation
+    # ------------------------------------------------------------
+    
+    required_cols <- c("sample_id", "subject_id", "visit")
+    
+    missing_cols <- setdiff(required_cols, colnames(meta))
+    
+    if (length(missing_cols) > 0) {
       stop(
         "colData is missing required columns: ",
-        paste(missing_meta, collapse = ", "),
+        paste(missing_cols, collapse = ", "),
+        call. = FALSE
+      )
+    }
+    
+    missing_visits <- setdiff(visits, unique(meta$visit))
+    
+    if (length(missing_visits) > 0) {
+      stop(
+        "These visits are not present in colData$visit: ",
+        paste(missing_visits, collapse = ", "),
         call. = FALSE
       )
     }
@@ -56,12 +73,28 @@ setMethod(
       stop("colData must have rownames matching assay column names.", call. = FALSE)
     }
 
-    missing_samples <- setdiff(rownames(meta), colnames(mat))
-
-    if (length(missing_samples) > 0) {
+    # ------------------------------------------------------------
+    # Correct validation
+    # ------------------------------------------------------------
+    
+    required_cols <- c("sample_id", "subject_id", "visit")
+    
+    missing_cols <- setdiff(required_cols, colnames(meta))
+    
+    if (length(missing_cols) > 0) {
       stop(
-        "Some colData rownames are missing from assay matrix column names: ",
-        paste(head(missing_samples, 10), collapse = ", "),
+        "colData is missing required columns: ",
+        paste(missing_cols, collapse = ", "),
+        call. = FALSE
+      )
+    }
+    
+    missing_visits <- setdiff(visits, unique(meta$visit))
+    
+    if (length(missing_visits) > 0) {
+      stop(
+        "These visits are not present in colData$visit: ",
+        paste(missing_visits, collapse = ", "),
         call. = FALSE
       )
     }

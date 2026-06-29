@@ -1,3 +1,4 @@
+#' @export
 setMethod(
   "lot_from_clusters",
   "LongOmicsTraj",

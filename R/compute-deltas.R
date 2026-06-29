@@ -1,3 +1,5 @@
+#' Compute deltas between visits
+#' @export
 setMethod(
   "lot_compute_deltas",
   "LongOmicsTraj",
