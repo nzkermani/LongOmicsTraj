@@ -1,5 +1,3 @@
-# LongOmicsTraj
-
 # LongOmicsTraj (LOT)
 
 **Topology-based analysis of longitudinal omics trajectories**
