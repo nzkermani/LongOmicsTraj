@@ -1,3 +1,4 @@
+#' @export
 setMethod(
   "lot_compare_estimators",
   signature(... = "ANY"),

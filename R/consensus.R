@@ -1,3 +1,4 @@
+#' @export
 setMethod(
   "lot_consensus",
   signature(x = "DFrame"),
