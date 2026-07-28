@@ -33,3 +33,4 @@ biocViews: Software, TimeCourse, Transcriptomics, Clustering, SystemsBiology
 BugReports: https://github.com
 URL: https://github.com
 Config/roxygen2/version: 8.0.0
+LazyData: true
