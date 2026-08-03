@@ -26,3 +26,8 @@ Welcome to `LongOmicsTraj`. This package is designed to cluster and monitor long
 ```r
 # Code implementation demo goes here
 ```
+## Session information
+
+```{r session-information}
+sessionInfo()
+```

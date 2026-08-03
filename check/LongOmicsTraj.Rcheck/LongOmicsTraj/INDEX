@@ -1,0 +1,56 @@
+LongOmicsTraj-class     The LongOmicsTraj Class
+compute_vmm_deltas      Compute adjacent visit-to-visit deltas from a
+                        Visit Mean Matrix
+lot_cluster_purity      Calculate topology purity within clusters
+lot_cluster_topology_score
+                        Calculate a topology-aware cluster score
+lot_compare             Compare LongOmicsTraj results
+lot_compare_estimators
+                        Compare trajectory estimators
+lot_compute_deltas      Compute between-visit molecular changes
+lot_compute_thresholds
+                        Compute molecular-change thresholds
+lot_consensus           Calculate consensus trajectory assignments
+lot_create              Create a LongOmicsTraj object
+lot_from_clusters       Cluster molecular features by longitudinal
+                        trajectory
+lot_from_empirical      Estimate trajectories using a maSigPro-style
+                        polynomial model
+lot_from_flexmix_clusters
+                        Cluster molecular features using FlexMix
+                        trajectory models
+lot_glucold             Cleaned longitudinal transcriptomics dataset
+                        from the GLUCOLD study
+lot_glucold_clinical    GLUCOLD clinical metadata
+lot_glucold_expression
+                        GLUCOLD expression matrix
+lot_glucold_ots         GLUCOLD LongOmicsTraj object with OTS results
+lot_mae                 Access components of a LongOmicsTraj object
+lot_map_to_ots          Map molecular changes to Omics Trajectory
+                        Signatures
+lot_plot_cluster_selection
+                        Plot topology-aware cluster selection
+lot_plot_cluster_topology
+                        Plot trajectory topology profiles for fitted
+                        clusters
+lot_plot_cluster_trajectory_arms
+                        Plot trajectory arms within molecular-feature
+                        clusters
+lot_plot_ots_distribution
+                        Plot the distribution of Omics Trajectory
+                        Signatures
+lot_plot_topology_deviation
+                        Plot topology deviations within clusters
+lot_plot_trajectory     Plot longitudinal trajectories for selected
+                        molecular features
+lot_query               Query LongOmicsTraj results
+lot_summary             Summarise a LongOmicsTraj object
+lot_visualise           Visualise LongOmicsTraj results
+plot_cluster_spaghetti
+                        Plot clustered molecular-feature trajectories
+plot_cluster_spaghetti_single
+                        Plot one clustered molecular-feature trajectory
+                        profile
+print.lot_summary       Print a LongOmicsTraj summary
+show,LongOmicsTraj-method
+                        Display a LongOmicsTraj object

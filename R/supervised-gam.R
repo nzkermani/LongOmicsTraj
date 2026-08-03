@@ -1,3 +1,4 @@
+#' @rdname lot_trajectory_estimators
 #' @export
 setMethod(
   "lot_from_gam",
@@ -44,7 +45,7 @@ setMethod(
       stop("colData rownames must match sample IDs.", call. = FALSE)
     }
     
-    mat = mat[, rownames(meta), drop = FALSE]
+    mat <- mat[, rownames(meta), drop = FALSE]
     feature_ids <- rownames(mat)
     
     # Build prediction grid

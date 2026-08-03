@@ -2,35 +2,58 @@ Package: LongOmicsTraj
 Type: Package
 Title: Longitudinal Omics Trajectory Clustering and Analysis Engine
 Version: 0.99.0
-Authors@R: c(
-    person("Jenny", "LastName", email = "jenny.email@example.com", 
-    role = c("aut", "cre"))
-  )
-Description: A robust S4 framework built to ingest MultiAssayExperiment 
-    objects for downstream longitudinal trajectory modeling, cluster 
-    concordance checking, and time-series omics integration.
+Authors@R:
+    person(
+        given = "Nazanin",
+        family = "Zounemat-Kermani",
+        email = "nonakermani@gmail.com",
+        role = c("aut", "cre"),
+        comment = c(
+            ORCID = "0000-0003-2479-3861"
+        )
+    )
+Description: Provides methods for estimating, classifying and comparing
+    longitudinal molecular trajectories across repeated study visits using
+    empirical, mixed-effects, generalized additive model and polynomial
+    regression estimators. Consecutive molecular changes are converted into
+    interpretable Omics Trajectory Signatures (OTS) describing stable,
+    sustained, transient and rebound temporal behaviours, enabling topology-
+    aware clustering and consensus trajectory inference. LongOmicsTraj further
+    provides a flexible query framework for directly retrieving molecular
+    features satisfying simple or complex trajectory definitions, including
+    multi-transition patterns, logical combinations of trajectory states,
+    group-specific behaviours, and comparisons of trajectory topologies across
+    treatment arms, experimental conditions or other longitudinal study arms.
 License: GPL-3
 Encoding: UTF-8
 Depends:
-    R (>= 4.4.0),
-    MultiAssayExperiment,
-    SummarizedExperiment
+    R (>= 4.6.0),
+    MultiAssayExperiment
 Imports:
     methods,
+    data.table,
     S4Vectors,
-    matrixStats,
-    cluster,
     ggplot2,
     dplyr,
+    stats4,
+    tibble,
+    scales,
+    SummarizedExperiment,
+    rlang,
+    withr,
     tidyr
-Suggests: 
+Suggests:
     testthat (>= 3.0.0),
+    matrixStats,
+    cluster,
     knitr,
     rmarkdown,
+    flexmix,
+    patchwork,
     BiocStyle
 VignetteBuilder: knitr
-biocViews: Software, TimeCourse, Transcriptomics, Clustering, SystemsBiology
-BugReports: https://github.com
-URL: https://github.com
+biocViews: Software, TimeCourse, Transcriptomics,
+    Clustering, SystemsBiology
+BugReports: https://github.com/nzkermani/LongOmicsTraj/issues
+URL: https://github.com/nzkermani/LongOmicsTraj
 Config/roxygen2/version: 8.0.0
-LazyData: true

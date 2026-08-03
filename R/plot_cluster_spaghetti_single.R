@@ -1,157 +1,674 @@
-plot_cluster_spaghetti_single <- function(object, cluster_id, assay_name, visits_vector) {
-
-  library(ggplot2)
-  library(dplyr)
-  library(tidyr)
-
-  # ----------------------------------------------------------------------------
-  # 1. Relationships
-  # ----------------------------------------------------------------------------
-  rel_df <- as.data.frame(object@relationships)
-  rel_df <- rel_df[rel_df$assay == assay_name, ]
-  rel_df$child_id <- toupper(rel_df$child_id)
-
-  # ----------------------------------------------------------------------------
-  # 2. Expression + metadata
-  # ----------------------------------------------------------------------------
-  se <- MultiAssayExperiment::experiments(object@mae)[[assay_name]]
-  raw_mat <- SummarizedExperiment::assay(se)
-  meta_df <- as.data.frame(SummarizedExperiment::colData(se))
-
-  rownames(raw_mat) <- toupper(rownames(raw_mat))
-
-  meta_df$sample_id <- rownames(meta_df)
-  meta_df <- meta_df[meta_df$visit %in% visits_vector, ]
-
-  groups <- unique(meta_df$group)
-
-  # ----------------------------------------------------------------------------
-  # 3. Trajectory matrix
-  # ----------------------------------------------------------------------------
-  traj_list <- lapply(groups, function(g) {
-    meta_g <- meta_df[meta_df$group == g, ]
-
-    sapply(visits_vector, function(v) {
-      samples <- meta_g$sample_id[meta_g$visit == v]
-      if (length(samples) == 0) return(rep(NA, nrow(raw_mat)))
-      rowMeans(raw_mat[, samples, drop = FALSE], na.rm = TRUE)
-    })
-  })
-
-  traj_mat <- do.call(cbind, traj_list)
-  colnames(traj_mat) <- as.vector(outer(groups, visits_vector, paste, sep = "_"))
-
-  # Filter genes in this cluster only
-  genes_in_cluster <- rel_df %>%
-    filter(parent_id == cluster_id) %>%
-    pull(child_id)
-
-  traj_mat <- traj_mat[rownames(traj_mat) %in% genes_in_cluster, , drop = FALSE]
-
-  # Scale
-  traj_scaled <- t(scale(t(traj_mat)))
-
-  # ----------------------------------------------------------------------------
-  # 4. Long format
-  # ----------------------------------------------------------------------------
-  gene_long <- as.data.frame(traj_scaled) %>%
-    mutate(gene_id = rownames(traj_scaled)) %>%
-    pivot_longer(cols = -gene_id, names_to = "combined", values_to = "expression") %>%
-    separate(combined, into = c("group", "visit"), sep = "_") %>%
-    mutate(cluster = cluster_id)
-
-  gene_long$visit <- factor(gene_long$visit, levels = visits_vector)
-
-  # ----------------------------------------------------------------------------
-  # 5. Add topology
-  # ----------------------------------------------------------------------------
-  gene_ots <- as.data.frame(object@results$gene_ots)
-  gene_ots$object_id <- toupper(gene_ots$object_id)
-
-  gene_long <- gene_long %>%
-    left_join(gene_ots[, c("object_id", "topology_label")],
-              by = c("gene_id" = "object_id"))
-
-  # ----------------------------------------------------------------------------
-  # 6. Cluster center
-  # ----------------------------------------------------------------------------
-  vmm_df <- as.data.frame(object@vmm) %>%
-    filter(assay == assay_name, object_id == cluster_id) %>%
-    rename(cluster = object_id,
-           visit = visit,
-           expression = estimated_value)
-
-  vmm_df$visit <- factor(vmm_df$visit, levels = visits_vector)
-
-  # ----------------------------------------------------------------------------
-  # 7. Topology % (legend labels)
-  # ----------------------------------------------------------------------------
-  topo_dist <- gene_long %>%
-    count(topology_label) %>%
-    mutate(
-      pct = round(100 * n / sum(n), 1),
-      label = paste0(topology_label, " (", pct, "%)")
+#' Plot one clustered molecular-feature trajectory profile
+#'
+#' Creates a spaghetti plot for a single molecular-feature cluster.
+#' Individual feature trajectories are coloured by their Omics Trajectory
+#' Signature, while the representative cluster trajectory is displayed in
+#' black.
+#'
+#' @param object A `LongOmicsTraj` object containing cluster relationships,
+#'   gene-level OTS results, cluster trajectories and OTS metrics.
+#' @param cluster_id Identifier of the cluster to display.
+#' @param assay_name Name of the assay to display.
+#' @param visits_vector Character vector giving visits in chronological order.
+#'
+#' @return A `ggplot` object.
+#'
+#' @export
+plot_cluster_spaghetti_single <- function(
+    object,
+    cluster_id,
+    assay_name,
+    visits_vector
+) {
+  
+  # ---------------------------------------------------------------------------
+  # Validate inputs
+  # ---------------------------------------------------------------------------
+  
+  if (!methods::is(object, "LongOmicsTraj")) {
+    stop(
+      "`object` must be a LongOmicsTraj object.",
+      call. = FALSE
     )
-
-  gene_long <- gene_long %>%
-    left_join(topo_dist[, c("topology_label", "label")],
-              by = "topology_label")
-
-  # ----------------------------------------------------------------------------
-  # 8. Metrics
-  # ----------------------------------------------------------------------------
-  metrics <- as.data.frame(object@results$ots_metrics)
-  cl_metrics <- metrics %>% filter(cluster_id == cluster_id)
-
-  purity_val  <- round(cl_metrics$purity[1], 2)
-  entropy_val <- round(cl_metrics$entropy[1], 2)
-
-  # ----------------------------------------------------------------------------
-  # 9. Plot
-  # ----------------------------------------------------------------------------
-  p <- ggplot() +
-
-    geom_line(
+  }
+  
+  if (
+    length(cluster_id) != 1L ||
+    is.na(cluster_id)
+  ) {
+    stop(
+      "`cluster_id` must contain one non-missing cluster identifier.",
+      call. = FALSE
+    )
+  }
+  
+  cluster_id <- as.character(
+    cluster_id
+  )
+  
+  if (!nzchar(cluster_id)) {
+    stop(
+      "`cluster_id` must not be empty.",
+      call. = FALSE
+    )
+  }
+  
+  if (
+    length(assay_name) != 1L ||
+    !is.character(assay_name) ||
+    is.na(assay_name) ||
+    !nzchar(assay_name)
+  ) {
+    stop(
+      "`assay_name` must be one non-empty character string.",
+      call. = FALSE
+    )
+  }
+  
+  if (
+    !is.character(visits_vector) ||
+    length(visits_vector) < 2L ||
+    anyNA(visits_vector) ||
+    any(!nzchar(visits_vector)) ||
+    anyDuplicated(visits_vector)
+  ) {
+    stop(
+      "`visits_vector` must contain at least two unique visit labels.",
+      call. = FALSE
+    )
+  }
+  
+  experiments <- MultiAssayExperiment::experiments(
+    object@mae
+  )
+  
+  if (!assay_name %in% names(experiments)) {
+    stop(
+      "Assay `",
+      assay_name,
+      "` was not found.",
+      call. = FALSE
+    )
+  }
+  
+  # ---------------------------------------------------------------------------
+  # Relationships
+  # ---------------------------------------------------------------------------
+  
+  relationship_data <- as.data.frame(
+    object@relationships
+  )
+  
+  required_relationship_columns <- c(
+    "assay",
+    "child_id",
+    "parent_id"
+  )
+  
+  missing_relationship_columns <- setdiff(
+    required_relationship_columns,
+    colnames(relationship_data)
+  )
+  
+  if (length(missing_relationship_columns) > 0L) {
+    stop(
+      "Relationship data are missing: ",
+      paste(
+        missing_relationship_columns,
+        collapse = ", "
+      ),
+      call. = FALSE
+    )
+  }
+  
+  relationship_data <- relationship_data[
+    as.character(relationship_data$assay) == assay_name,
+    ,
+    drop = FALSE
+  ]
+  
+  if (nrow(relationship_data) == 0L) {
+    stop(
+      "No cluster relationships were found for assay `",
+      assay_name,
+      "`.",
+      call. = FALSE
+    )
+  }
+  
+  relationship_data$child_id <- toupper(
+    as.character(relationship_data$child_id)
+  )
+  
+  relationship_data$parent_id <- as.character(
+    relationship_data$parent_id
+  )
+  
+  genes_in_cluster <- relationship_data |>
+    dplyr::filter(
+      .data$parent_id == .env$cluster_id
+    ) |>
+    dplyr::pull(
+      .data$child_id
+    ) |>
+    unique()
+  
+  if (length(genes_in_cluster) == 0L) {
+    stop(
+      "No features were assigned to cluster `",
+      cluster_id,
+      "`.",
+      call. = FALSE
+    )
+  }
+  
+  # ---------------------------------------------------------------------------
+  # Expression matrix and metadata
+  # ---------------------------------------------------------------------------
+  
+  se <- experiments[[assay_name]]
+  
+  raw_matrix <- SummarizedExperiment::assay(
+    se
+  )
+  
+  metadata <- as.data.frame(
+    SummarizedExperiment::colData(se)
+  )
+  
+  if (!is.numeric(raw_matrix)) {
+    stop(
+      "The assay matrix must be numeric.",
+      call. = FALSE
+    )
+  }
+  
+  required_metadata_columns <- c(
+    "visit",
+    "group"
+  )
+  
+  missing_metadata_columns <- setdiff(
+    required_metadata_columns,
+    colnames(metadata)
+  )
+  
+  if (length(missing_metadata_columns) > 0L) {
+    stop(
+      "Metadata are missing: ",
+      paste(
+        missing_metadata_columns,
+        collapse = ", "
+      ),
+      call. = FALSE
+    )
+  }
+  
+  if (is.null(rownames(raw_matrix))) {
+    stop(
+      "The assay matrix must have feature row names.",
+      call. = FALSE
+    )
+  }
+  
+  rownames(raw_matrix) <- toupper(
+    rownames(raw_matrix)
+  )
+  
+  if ("sample_id" %in% colnames(metadata)) {
+    metadata$sample_id <- as.character(
+      metadata$sample_id
+    )
+  } else {
+    metadata$sample_id <- rownames(
+      metadata
+    )
+  }
+  
+  metadata <- metadata[
+    as.character(metadata$visit) %in% visits_vector,
+    ,
+    drop = FALSE
+  ]
+  
+  if (nrow(metadata) == 0L) {
+    stop(
+      "No samples remained after filtering the requested visits.",
+      call. = FALSE
+    )
+  }
+  
+  groups <- unique(
+    as.character(metadata$group)
+  )
+  
+  # ---------------------------------------------------------------------------
+  # Build the trajectory matrix
+  # ---------------------------------------------------------------------------
+  
+  traj_list <- lapply(
+    groups,
+    function(current_group) {
+      
+      meta_group <- metadata[
+        as.character(metadata$group) == current_group,
+        ,
+        drop = FALSE
+      ]
+      
+      vapply(
+        visits_vector,
+        function(current_visit) {
+          
+          samples <- meta_group$sample_id[
+            as.character(meta_group$visit) ==
+              current_visit
+          ]
+          
+          if (length(samples) == 0L) {
+            return(
+              rep(
+                NA_real_,
+                nrow(raw_matrix)
+              )
+            )
+          }
+          
+          rowMeans(
+            raw_matrix[
+              ,
+              samples,
+              drop = FALSE
+            ],
+            na.rm = TRUE
+          )
+        },
+        numeric(
+          nrow(raw_matrix)
+        )
+      )
+    }
+  )
+  
+  trajectory_matrix <- do.call(
+    cbind,
+    traj_list
+  )
+  
+  colnames(trajectory_matrix) <- as.vector(
+    outer(
+      groups,
+      visits_vector,
+      paste,
+      sep = "_"
+    )
+  )
+  
+  trajectory_matrix <- trajectory_matrix[
+    rownames(trajectory_matrix) %in% genes_in_cluster,
+    ,
+    drop = FALSE
+  ]
+  
+  if (nrow(trajectory_matrix) == 0L) {
+    stop(
+      "No features from cluster `",
+      cluster_id,
+      "` were found in the assay matrix.",
+      call. = FALSE
+    )
+  }
+  
+  trajectory_scaled <- t(
+    base::scale(
+      t(trajectory_matrix)
+    )
+  )
+  
+  complete_features <- rowSums(
+    is.finite(trajectory_scaled)
+  ) == ncol(trajectory_scaled)
+  
+  trajectory_scaled <- trajectory_scaled[
+    complete_features,
+    ,
+    drop = FALSE
+  ]
+  
+  if (nrow(trajectory_scaled) == 0L) {
+    stop(
+      "No complete, variable feature trajectories remained.",
+      call. = FALSE
+    )
+  }
+  
+  # ---------------------------------------------------------------------------
+  # Convert trajectories to long format
+  # ---------------------------------------------------------------------------
+  
+  gene_long <- as.data.frame(
+    trajectory_scaled
+  ) |>
+    tibble::rownames_to_column(
+      var = "gene_id"
+    ) |>
+    tidyr::pivot_longer(
+      cols = -dplyr::all_of("gene_id"),
+      names_to = "combined",
+      values_to = "expression"
+    ) |>
+    tidyr::separate(
+      col = .data$combined,
+      into = c(
+        "group",
+        "visit"
+      ),
+      sep = "_",
+      extra = "merge",
+      fill = "right"
+    ) |>
+    dplyr::mutate(
+      cluster = .env$cluster_id
+    )
+  
+  gene_long$visit <- factor(
+    gene_long$visit,
+    levels = visits_vector,
+    ordered = TRUE
+  )
+  
+  # ---------------------------------------------------------------------------
+  # Add topology labels
+  # ---------------------------------------------------------------------------
+  
+  if (
+    is.null(object@results$gene_ots) ||
+    nrow(object@results$gene_ots) == 0L
+  ) {
+    stop(
+      "No gene-level OTS results were found in ",
+      "`object@results$gene_ots`.",
+      call. = FALSE
+    )
+  }
+  
+  gene_ots <- as.data.frame(
+    object@results$gene_ots
+  )
+  
+  required_ots_columns <- c(
+    "object_id",
+    "topology_label"
+  )
+  
+  missing_ots_columns <- setdiff(
+    required_ots_columns,
+    colnames(gene_ots)
+  )
+  
+  if (length(missing_ots_columns) > 0L) {
+    stop(
+      "Gene-level OTS results are missing: ",
+      paste(
+        missing_ots_columns,
+        collapse = ", "
+      ),
+      call. = FALSE
+    )
+  }
+  
+  gene_ots$object_id <- toupper(
+    as.character(gene_ots$object_id)
+  )
+  
+  gene_long <- gene_long |>
+    dplyr::left_join(
+      gene_ots[
+        ,
+        c(
+          "object_id",
+          "topology_label"
+        ),
+        drop = FALSE
+      ],
+      by = c(
+        "gene_id" = "object_id"
+      )
+    )
+  
+  # ---------------------------------------------------------------------------
+  # Cluster-centre trajectory
+  # ---------------------------------------------------------------------------
+  
+  vmm_data <- as.data.frame(
+    object@vmm
+  )
+  
+  required_vmm_columns <- c(
+    "assay",
+    "object_id",
+    "visit",
+    "estimated_value"
+  )
+  
+  missing_vmm_columns <- setdiff(
+    required_vmm_columns,
+    colnames(vmm_data)
+  )
+  
+  if (length(missing_vmm_columns) > 0L) {
+    stop(
+      "VMM results are missing: ",
+      paste(
+        missing_vmm_columns,
+        collapse = ", "
+      ),
+      call. = FALSE
+    )
+  }
+  
+  vmm_data <- vmm_data |>
+    dplyr::filter(
+      .data$assay == .env$assay_name,
+      as.character(.data$object_id) ==
+        .env$cluster_id
+    ) |>
+    dplyr::transmute(
+      cluster = as.character(
+        .data$object_id
+      ),
+      visit = .data$visit,
+      expression = .data$estimated_value
+    )
+  
+  if (nrow(vmm_data) == 0L) {
+    stop(
+      "No representative trajectory was found for cluster `",
+      cluster_id,
+      "`.",
+      call. = FALSE
+    )
+  }
+  
+  vmm_data$visit <- factor(
+    vmm_data$visit,
+    levels = visits_vector,
+    ordered = TRUE
+  )
+  
+  # ---------------------------------------------------------------------------
+  # Build topology labels
+  # ---------------------------------------------------------------------------
+  
+  topology_distribution <- gene_long |>
+    dplyr::filter(
+      !is.na(.data$topology_label)
+    ) |>
+    dplyr::count(
+      .data$topology_label,
+      name = "n"
+    ) |>
+    dplyr::mutate(
+      pct = round(
+        100 * .data$n /
+          sum(.data$n),
+        1
+      ),
+      label = paste0(
+        .data$topology_label,
+        " (",
+        .data$pct,
+        "%)"
+      )
+    )
+  
+  gene_long <- gene_long |>
+    dplyr::left_join(
+      topology_distribution[
+        ,
+        c(
+          "topology_label",
+          "label"
+        ),
+        drop = FALSE
+      ],
+      by = "topology_label"
+    )
+  
+  # ---------------------------------------------------------------------------
+  # Cluster metrics
+  # ---------------------------------------------------------------------------
+  
+  if (
+    is.null(object@results$ots_metrics) ||
+    nrow(object@results$ots_metrics) == 0L
+  ) {
+    stop(
+      "No OTS metrics were found in `object@results$ots_metrics`.",
+      call. = FALSE
+    )
+  }
+  
+  metrics <- as.data.frame(
+    object@results$ots_metrics
+  )
+  
+  required_metric_columns <- c(
+    "cluster_id",
+    "purity",
+    "entropy"
+  )
+  
+  missing_metric_columns <- setdiff(
+    required_metric_columns,
+    colnames(metrics)
+  )
+  
+  if (length(missing_metric_columns) > 0L) {
+    stop(
+      "OTS metrics are missing: ",
+      paste(
+        missing_metric_columns,
+        collapse = ", "
+      ),
+      call. = FALSE
+    )
+  }
+  
+  cluster_metrics <- metrics |>
+    dplyr::filter(
+      as.character(.data$cluster_id) ==
+        .env$cluster_id
+    )
+  
+  purity_value <- if (nrow(cluster_metrics) > 0L) {
+    round(
+      cluster_metrics$purity[[1L]],
+      2
+    )
+  } else {
+    NA_real_
+  }
+  
+  entropy_value <- if (nrow(cluster_metrics) > 0L) {
+    round(
+      cluster_metrics$entropy[[1L]],
+      2
+    )
+  } else {
+    NA_real_
+  }
+  
+  # ---------------------------------------------------------------------------
+  # Build the plot
+  # ---------------------------------------------------------------------------
+  
+  plot_object <- ggplot2::ggplot() +
+    ggplot2::geom_line(
       data = gene_long,
-      aes(x = visit, y = expression, group = gene_id, color = label),
+      mapping = ggplot2::aes(
+        x = .data$visit,
+        y = .data$expression,
+        group = .data$gene_id,
+        colour = .data$label
+      ),
       alpha = 0.4,
       linewidth = 0.5
     ) +
-
-    geom_line(
-      data = vmm_df,
-      aes(x = visit, y = expression, group = cluster),
-      color = "black",
+    ggplot2::geom_line(
+      data = vmm_data,
+      mapping = ggplot2::aes(
+        x = .data$visit,
+        y = .data$expression,
+        group = .data$cluster
+      ),
+      colour = "black",
       linewidth = 1.5
     ) +
-
-    geom_point(
-      data = vmm_df,
-      aes(x = visit, y = expression),
-      color = "black",
+    ggplot2::geom_point(
+      data = vmm_data,
+      mapping = ggplot2::aes(
+        x = .data$visit,
+        y = .data$expression
+      ),
+      colour = "black",
       size = 3
     ) +
-
-    scale_color_brewer(palette = "Set2", na.value = "grey70") +
-
-    labs(
-      title = paste("Cluster:", cluster_id),
+    ggplot2::scale_colour_brewer(
+      palette = "Set2",
+      na.value = "grey70"
+    ) +
+    ggplot2::labs(
+      title = paste(
+        "Cluster:",
+        cluster_id
+      ),
       subtitle = paste0(
-        "n = ", length(unique(gene_long$gene_id)),
-        " | Purity = ", purity_val,
-        " | Entropy = ", entropy_val
+        "n = ",
+        dplyr::n_distinct(
+          gene_long$gene_id
+        ),
+        " | Purity = ",
+        purity_value,
+        " | Entropy = ",
+        entropy_value
       ),
       x = "Visit",
       y = "Scaled expression",
-      color = "Topology (%)"
+      colour = "Topology (%)"
     ) +
-
-    theme_minimal(base_size = 13) +
-    theme(
-      plot.title = element_text(face = "bold"),
-      axis.title = element_text(face = "bold"),
+    ggplot2::theme_minimal(
+      base_size = 13
+    ) +
+    ggplot2::theme(
+      plot.title = ggplot2::element_text(
+        face = "bold"
+      ),
+      axis.title = ggplot2::element_text(
+        face = "bold"
+      ),
       legend.position = "right"
     )
-
-  return(p)
+  
+  plot_object
 }

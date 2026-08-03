@@ -1,120 +1,304 @@
 # ============================================================
 # LongOmicsTraj generics
 # ============================================================
-#' @import data.table
+
+# Import data.table special symbols used in package code.
 #' @importFrom data.table .I .N .EACHI .BY
 NULL
 
-#' Create a LongOmicsTraj object
-#' @export
-setGeneric("lot_create", function(...) {
-  standardGeneric("lot_create")
-})
 
-#' Access the MultiAssayExperiment
-#' @export
-setGeneric("lot_mae", function(object) {
-  standardGeneric("lot_mae")
-})
+# ============================================================
+# Accessor generics
+# ============================================================
 
-#' Access the Visit Mean Matrix
+#' @rdname lot_accessors
 #' @export
-setGeneric("lot_vmm", function(object) {
-  standardGeneric("lot_vmm")
-})
+setGeneric(
+  "lot_mae",
+  function(object) {
+    standardGeneric("lot_mae")
+  }
+)
 
-#' Access adjacent deltas
+
+#' @rdname lot_accessors
 #' @export
-setGeneric("lot_deltas", function(object) {
-  standardGeneric("lot_deltas")
-})
+setGeneric(
+  "lot_vmm",
+  function(object) {
+    standardGeneric("lot_vmm")
+  }
+)
 
-#' Access thresholds
+
+#' @rdname lot_accessors
 #' @export
-setGeneric("lot_thresholds", function(object) {
-  standardGeneric("lot_thresholds")
-})
+setGeneric(
+  "lot_deltas",
+  function(object) {
+    standardGeneric("lot_deltas")
+  }
+)
 
-#' Access Overall Trajectory States
+
+#' @rdname lot_accessors
 #' @export
-setGeneric("lot_ots", function(object) {
-  standardGeneric("lot_ots")
-})
+setGeneric(
+  "lot_thresholds",
+  function(object) {
+    standardGeneric("lot_thresholds")
+  }
+)
 
-#' Access object relationships
+
+#' @rdname lot_accessors
 #' @export
-setGeneric("lot_relationships", function(object) {
-  standardGeneric("lot_relationships")
-})
+setGeneric(
+  "lot_ots",
+  function(object) {
+    standardGeneric("lot_ots")
+  }
+)
 
-#' Access stored results
+
+#' @rdname lot_accessors
 #' @export
-setGeneric("lot_results", function(object) {
-  standardGeneric("lot_results")
-})
+setGeneric(
+  "lot_relationships",
+  function(object) {
+    standardGeneric("lot_relationships")
+  }
+)
 
-#' Map trajectories to OTS labels
+
+#' @rdname lot_accessors
+#' @export
+setGeneric(
+  "lot_results",
+  function(object) {
+    standardGeneric("lot_results")
+  }
+)
+
+
+# ============================================================
+# Core trajectory-processing generics
+# ============================================================
+
+#' Map molecular changes to Omics Trajectory Signatures
+#'
+#' Classifies molecular changes between consecutive visits and combines them
+#' into feature-level Omics Trajectory Signature labels.
+#'
+#' @param object A `LongOmicsTraj` object.
+#' @param visits Character vector giving the chronological visit order.
+#' @param overwrite Logical; overwrite existing OTS results.
+#' @param ... Additional arguments passed to the corresponding method.
+#'
+#' @return A `LongOmicsTraj` object containing updated OTS assignments.
+#'
 #' @export
 setGeneric(
   "lot_map_to_ots",
-  function(object, visits, overwrite = FALSE, ...)
+  function(
+    object,
+    visits,
+    overwrite = FALSE,
+    ...
+  ) {
     standardGeneric("lot_map_to_ots")
+  }
 )
-#' Query topology labels
-#' @export
-setGeneric("lot_query", function(object, ...) {
-  standardGeneric("lot_query")
-})
 
-#' Compare topology assignments
-#' @export
-setGeneric("lot_compare", function(object, ...) {
-  standardGeneric("lot_compare")
-})
 
-#' Visualise topology outputs
+#' Compute between-visit molecular changes
+#'
+#' Computes feature-level changes between consecutive visits from stored
+#' visit-level molecular trajectories.
+#'
+#' @param object A `LongOmicsTraj` object.
+#' @param ... Additional arguments passed to the corresponding method.
+#'
+#' @return A `LongOmicsTraj` object containing updated molecular-change
+#' results.
+#'
 #' @export
-setGeneric("lot_visualise", function(object, ...) {
-  standardGeneric("lot_visualise")
-})
-#' Compute topology thresholds
-#' @export
-setGeneric("lot_compute_thresholds", function(object, ...) {
-  standardGeneric("lot_compute_thresholds")
-})
+setGeneric(
+  "lot_compute_deltas",
+  function(object, ...) {
+    standardGeneric("lot_compute_deltas")
+  }
+)
 
-#' Query OTS topology labels
-#' @export
-setGeneric("lot_query", function(object, ...) {
-  standardGeneric("lot_query")
-})
 
-#' Build VMM from linear mixed-effects models
+#' Compute molecular-change thresholds
+#'
+#' Computes thresholds used to classify molecular changes between consecutive
+#' visits.
+#'
+#' @param object A `LongOmicsTraj` object.
+#' @param ... Additional arguments passed to the corresponding method.
+#'
+#' @return A `LongOmicsTraj` object containing updated threshold results.
+#'
 #' @export
-setGeneric("lot_from_lmm", function(object, ...) {
-  standardGeneric("lot_from_lmm")
-})
+setGeneric(
+  "lot_compute_thresholds",
+  function(object, ...) {
+    standardGeneric("lot_compute_thresholds")
+  }
+)
 
-setGeneric("lot_from_gam", function(object, ...) {
-  standardGeneric("lot_from_gam")
-})
-setGeneric("lot_from_masigpro", function(object, ...) {
-  standardGeneric("lot_from_masigpro")
-})
-setGeneric("lot_compare_estimators", function(...) {
-  standardGeneric("lot_compare_estimators")
-})
-setGeneric("lot_consensus", function(x, min_agreement = 2, mode = "majority") {
-  standardGeneric("lot_consensus")
-})
-setGeneric("lot_from_clusters", function(object, ...) {
-  standardGeneric("lot_from_clusters")
-})
-setGeneric("lot_compute_deltas", function(object, ...) {
-  standardGeneric("lot_compute_deltas")
-})
+
+# ============================================================
+# Query, comparison and visualisation generics
+# ============================================================
+
+#' Query LongOmicsTraj results
+#'
+#' Retrieves molecular features or trajectory results matching user-defined
+#' criteria.
+#'
+#' @param object A `LongOmicsTraj` object.
+#' @param ... Query arguments passed to the corresponding method.
+#'
+#' @return A filtered result object.
+#'
+#' @export
+setGeneric(
+  "lot_query",
+  function(object, ...) {
+    standardGeneric("lot_query")
+  }
+)
+
+
+# ============================================================
+# Trajectory-estimation generics
+# ============================================================
+
+#' @rdname lot_trajectory_estimators
+#' @export
 setGeneric(
   "lot_from_empirical",
-  function(object, assay, visits, ...)
+  function(object, ...) {
     standardGeneric("lot_from_empirical")
+  }
+)
+
+
+#' @rdname lot_trajectory_estimators
+#' @export
+setGeneric(
+  "lot_from_lmm",
+  function(object, ...) {
+    standardGeneric("lot_from_lmm")
+  }
+)
+
+
+#' @rdname lot_trajectory_estimators
+#' @export
+setGeneric(
+  "lot_from_gam",
+  function(object, ...) {
+    standardGeneric("lot_from_gam")
+  }
+)
+
+
+#' @rdname lot_trajectory_estimators
+#' @export
+setGeneric(
+  "lot_from_masigpro",
+  function(object, ...) {
+    standardGeneric("lot_from_masigpro")
+  }
+)
+
+
+# ============================================================
+# Estimator comparison and consensus
+# ============================================================
+# Estimator comparison and consensus
+# ============================================================
+
+#' Compare trajectory estimators
+#'
+#' Combines Omics Trajectory Signature assignments generated by two or more
+#' trajectory estimators into a common comparison table.
+#'
+#' @param object A `LongOmicsTraj` object containing OTS assignments.
+#' @param ... Additional `LongOmicsTraj` objects to compare.
+#' @param .names Optional character vector giving estimator labels. Its length
+#'   must equal the total number of supplied objects.
+#'
+#' @return An `S4Vectors::DataFrame` containing the combined OTS assignments.
+#'
+#' @export
+methods::setGeneric(
+  "lot_compare_estimators",
+  function(
+    object,
+    ...,
+    .names = NULL
+  ) {
+    methods::standardGeneric(
+      "lot_compare_estimators"
+    )
+  }
+)
+
+
+#' Calculate consensus trajectory assignments
+#'
+#' Combines Omics Trajectory Signature assignments from multiple estimators
+#' into a consensus topology label.
+#'
+#' @param x An object containing topology assignments from multiple estimators.
+#' @param min_agreement Minimum number of estimators that must agree.
+#' @param mode Consensus rule. `"majority"` assigns the most frequent label
+#'   when at least `min_agreement` assignments agree. `"strict"` requires all
+#'   available assignments to agree.
+#'
+#' @return An object containing consensus topology assignments.
+#'
+#' @rdname lot_consensus
+#' @export
+methods::setGeneric(
+  "lot_consensus",
+  function(
+    x,
+    min_agreement = 2L,
+    mode = c(
+      "strict",
+      "majority"
+    )
+  ) {
+    methods::standardGeneric(
+      "lot_consensus"
+    )
+  }
+)
+# ============================================================
+# Clustering generic
+# ============================================================
+#' Cluster molecular features by longitudinal trajectory
+#'
+#' Groups molecular features according to similarities in their longitudinal
+#' profiles.
+#'
+#' @param object A `LongOmicsTraj` object.
+#' @param ... Additional clustering arguments passed to the method.
+#'
+#' @return A `LongOmicsTraj` object containing cluster-level trajectories
+#' and feature-to-cluster relationships.
+#'
+#' @rdname lot_from_clusters
+#' @export
+setGeneric(
+  "lot_from_clusters",
+  function(object, ...) {
+    standardGeneric("lot_from_clusters")
+  }
 )
