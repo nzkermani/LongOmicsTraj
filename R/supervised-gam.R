@@ -1,4 +1,109 @@
 #' @rdname lot_trajectory_estimators
+#' @examples
+#' \donttest{
+#' if (requireNamespace("mgcv", quietly = TRUE)) {
+#'
+#'   data("lot_glucold")
+#'
+#'   visits <- c(
+#'     "Baseline",
+#'     "6 Months",
+#'     "30 Months"
+#'   )
+#'
+#'   ## Work on a copy of the example object
+#'   lot_gam <- lot_glucold
+#'
+#'   ## Extract the transcriptomics experiment
+#'   experiments <- MultiAssayExperiment::experiments(
+#'     lot_gam@mae
+#'   )
+#'
+#'   se <- experiments[["transcriptomics"]]
+#'
+#'   metadata <- as.data.frame(
+#'     SummarizedExperiment::colData(se)
+#'   )
+#'
+#'   ## Define chronological visit order
+#'   metadata$visit <- factor(
+#'     metadata$visit,
+#'     levels = visits,
+#'     ordered = TRUE
+#'   )
+#'
+#'   ## Create numeric time values used by the smooth
+#'   metadata$time <- c(
+#'     "Baseline" = 0,
+#'     "6 Months" = 6,
+#'     "30 Months" = 30
+#'   )[as.character(metadata$visit)]
+#'
+#'   ## Ensure grouping variables are factors
+#'   metadata$group <- factor(
+#'     metadata$group
+#'   )
+#'
+#'   metadata$subject_id <- factor(
+#'     metadata$subject_id
+#'   )
+#'
+#'   stopifnot(
+#'     !anyNA(metadata$visit),
+#'     !anyNA(metadata$time)
+#'   )
+#'
+#'   ## Return the updated metadata to the experiment
+#'   SummarizedExperiment::colData(se) <- S4Vectors::DataFrame(
+#'     metadata,
+#'     row.names = rownames(metadata)
+#'   )
+#'
+#'   experiments[["transcriptomics"]] <- se
+#'
+#'   lot_gam@mae <- MultiAssayExperiment::MultiAssayExperiment(
+#'     experiments = experiments
+#'   )
+#'
+#'   ## Estimate group-specific smooth trajectories
+#'   lot_gam <- lot_from_gam(
+#'     object = lot_gam,
+#'     assay = "transcriptomics",
+#'     formula_fixed =
+#'       y ~
+#'       group +
+#'       mgcv::s(
+#'         time,
+#'         by = group,
+#'         k = 3
+#'       ) +
+#'       mgcv::s(
+#'         subject_id,
+#'         bs = "re"
+#'       ),
+#'     group_col = "group",
+#'     visit_col = "visit",
+#'     subject_col = "subject_id",
+#'     visits = visits,
+#'     overwrite = TRUE,
+#'     verbose = FALSE
+#'   )
+#'
+#'   ## Inspect the Visit Mean Matrix
+#'   utils::head(
+#'     as.data.frame(lot_gam@vmm)
+#'   )
+#'
+#'   stopifnot(
+#'     nrow(lot_gam@vmm) == 852L,
+#'     all(
+#'       unique(
+#'         as.character(lot_gam@vmm$estimator)
+#'       ) == "gam"
+#'     )
+#'   )
+#' }
+#' }
 #' @export
 setMethod(
   "lot_from_gam",

@@ -20,6 +20,80 @@
 #' @return A `LongOmicsTraj` object with updated visit mean trajectories.
 #'
 #' @rdname lot_trajectory_estimators
+#' @examples
+#' \donttest{
+#' data("lot_glucold")
+#'
+#' visits <- c(
+#'   "Baseline",
+#'   "6 Months",
+#'   "30 Months"
+#' )
+#'
+#' ## Work on a copy of the example object
+#' lot_masigpro <- lot_glucold
+#'
+#' ## Extract the transcriptomics experiment
+#' experiments <- MultiAssayExperiment::experiments(
+#'   lot_masigpro@mae
+#' )
+#'
+#' se <- experiments[["transcriptomics"]]
+#'
+#' metadata <- as.data.frame(
+#'   SummarizedExperiment::colData(se)
+#' )
+#'
+#' ## Define chronological visit order
+#' metadata$visit <- factor(
+#'   metadata$visit,
+#'   levels = visits,
+#'   ordered = TRUE
+#' )
+#'
+#' ## Create numeric visit times required by the polynomial model
+#' metadata$time <- c(
+#'   "Baseline" = 0,
+#'   "6 Months" = 6,
+#'   "30 Months" = 30
+#' )[as.character(metadata$visit)]
+#'
+#' stopifnot(
+#'   !anyNA(metadata$visit),
+#'   !anyNA(metadata$time)
+#' )
+#'
+#' ## Return the updated metadata to the experiment
+#' SummarizedExperiment::colData(se) <- S4Vectors::DataFrame(
+#'   metadata,
+#'   row.names = rownames(metadata)
+#' )
+#'
+#' experiments[["transcriptomics"]] <- se
+#'
+#' lot_masigpro@mae <- MultiAssayExperiment::MultiAssayExperiment(
+#'   experiments = experiments
+#' )
+#'
+#' ## Estimate group-specific polynomial trajectories
+#' lot_masigpro <- lot_from_masigpro(
+#'   object = lot_masigpro,
+#'   assay = "transcriptomics",
+#'   group_col = "group",
+#'   visit_col = "visit",
+#'   time_col = "time",
+#'   subject_col = "subject_id",
+#'   visits = visits,
+#'   degree = 2,
+#'   overwrite = TRUE,
+#'   verbose = FALSE
+#' )
+#'
+#' ## Inspect the Visit Mean Matrix
+#' utils::head(
+#'   as.data.frame(lot_masigpro@vmm)
+#' )
+#' }
 #' @export
 methods::setMethod(
   "lot_from_masigpro",

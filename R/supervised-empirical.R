@@ -1,4 +1,84 @@
 #' @rdname lot_trajectory_estimators
+#' @examples
+#' \donttest{
+#' data("lot_glucold")
+#'
+#' visits <- c(
+#'   "Baseline",
+#'   "6 Months",
+#'   "30 Months"
+#' )
+#'
+#' ## Work on a copy of the example object
+#' lot_empirical <- lot_glucold
+#'
+#' ## Extract the transcriptomics experiment
+#' experiments <- MultiAssayExperiment::experiments(
+#'   lot_empirical@mae
+#' )
+#'
+#' se <- experiments[["transcriptomics"]]
+#'
+#' metadata <- as.data.frame(
+#'   SummarizedExperiment::colData(se)
+#' )
+#'
+#' ## Define the chronological visit order
+#' metadata$visit <- factor(
+#'   metadata$visit,
+#'   levels = visits,
+#'   ordered = TRUE
+#' )
+#'
+#' ## Ensure the grouping variable is treated as a factor
+#' metadata$group <- factor(
+#'   metadata$group
+#' )
+#'
+#' stopifnot(
+#'   !anyNA(metadata$visit)
+#' )
+#'
+#' ## Return the updated metadata to the experiment
+#' SummarizedExperiment::colData(se) <- S4Vectors::DataFrame(
+#'   metadata,
+#'   row.names = rownames(metadata)
+#' )
+#'
+#' experiments[["transcriptomics"]] <- se
+#'
+#' lot_empirical@mae <- MultiAssayExperiment::MultiAssayExperiment(
+#'   experiments = experiments
+#' )
+#'
+#' ## Calculate empirical group-by-visit means
+#' lot_empirical <- lot_from_empirical(
+#'   object = lot_empirical,
+#'   assay = "transcriptomics",
+#'   visits = visits,
+#'   group_col = "group",
+#'   visit_col = "visit",
+#'   estimator = "empirical",
+#'   overwrite = TRUE,
+#'   verbose = FALSE
+#' )
+#'
+#' ## Inspect the Visit Mean Matrix
+#' utils::head(
+#'   as.data.frame(lot_empirical@vmm)
+#' )
+#'
+#' stopifnot(
+#'   nrow(lot_empirical@vmm) == 852L,
+#'   all(
+#'     unique(
+#'       as.character(
+#'         lot_empirical@vmm$estimator
+#'       )
+#'     ) == "empirical"
+#'   )
+#' )
+#' }
 #' @export
 setMethod(
   "lot_from_empirical",

@@ -124,8 +124,8 @@ colnames(meta_use)
 Users analysing their own data only need to replace:
 
 ```{r user-input-template, eval=FALSE}
-expr_use <- your_expression_matrix
-meta_use <- your_clinical_metadata
+#expr_use <- your_expression_matrix
+#meta_use <- your_clinical_metadata
 ```
 
 The expression matrix should have genes in rows and samples in columns. The metadata should contain `sample_id`, `subject_id`, `visit` and `group`.
@@ -787,8 +787,8 @@ The gene-level profiles connect the discrete OTS labels to the observed expressi
 The same workflow applies to another longitudinal dataset.
 
 ```{r own-data-template, eval=FALSE}
-expr_use <- your_expression_matrix
-meta_use <- your_clinical_metadata
+#expr_use <- your_expression_matrix
+#meta_use <- your_clinical_metadata
 
 meta_use <- meta_use[
   match(
@@ -823,19 +823,19 @@ lot_object <- new(
 The assay name may be changed to match the data, for example:
 
 ```{r alternative-assays, eval=FALSE}
-assays = list(
-  proteomics = protein_matrix
-)
+#assays = list(
+#  proteomics = protein_matrix
+#)
 ```
 
 or:
 
 ```{r multiple-assays, eval=FALSE}
-mae <- MultiAssayExperiment(
-  experiments = ExperimentList(
-    transcriptomics = transcriptomics_se,
-    proteomics = proteomics_se,
-    metabolomics = metabolomics_se
+#mae <- MultiAssayExperiment(
+#  experiments = ExperimentList(
+#    transcriptomics = transcriptomics_se,
+#    proteomics = proteomics_se,
+#    metabolomics = metabolomics_se
   )
 )
 ```
@@ -880,7 +880,8 @@ lot <- lot_from_masigpro(
     "Baseline",
     "6 Months",
     "30 Months"
-  )
+  ),
+  overwrite = TRUE
 )
 
 # Compute OTS

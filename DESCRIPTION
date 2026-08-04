@@ -33,15 +33,19 @@ Imports:
     methods,
     data.table,
     S4Vectors,
+    SummarizedExperiment,
+    BiocParallel,
     ggplot2,
     dplyr,
-    stats4,
     tibble,
-    scales,
-    SummarizedExperiment,
+    tidyr,
     rlang,
+    scales,
     withr,
-    tidyr
+    stats4,
+    lme4,
+    emmeans,
+    mgcv
 Suggests:
     testthat (>= 3.0.0),
     matrixStats,
@@ -50,7 +54,8 @@ Suggests:
     rmarkdown,
     flexmix,
     patchwork,
-    BiocStyle
+    BiocStyle,
+    maSigPro
 VignetteBuilder: knitr
 biocViews: Software, TimeCourse, Transcriptomics,
     Clustering, SystemsBiology

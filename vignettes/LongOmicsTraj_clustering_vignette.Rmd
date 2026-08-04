@@ -1,0 +1,611 @@
+---
+title: "Topology-aware clustering of longitudinal trajectories with LongOmicsTraj"
+author: "Nazanin Zounemat-Kermani"
+package: LongOmicsTraj
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Topology-aware clustering of longitudinal trajectories}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 8,
+  fig.height = 5,
+  warning = FALSE,
+  message = FALSE
+)
+```
+
+# Overview
+
+LongOmicsTraj separates longitudinal trajectory estimation from trajectory
+representation and clustering. In this vignette, the packaged GLUCOLD example
+is used to demonstrate a complete topology-aware clustering workflow:
+
+1. construct visit-level empirical trajectories;
+2. calculate adjacent changes and assign feature-level Omics Trajectory
+   Signatures (OTS);
+3. cluster genes using combined group-by-visit profiles;
+4. summarise topology composition and purity within clusters;
+5. evaluate topology coverage and duplication;
+6. visualise cluster centres, trajectory arms and topology deviations; and
+7. fit topology-aware FlexMix trajectory clusters in a selected treatment arm.
+
+The example is intentionally small so that it can be run as part of package
+documentation. The packaged object contains 71 molecular features measured
+across three visits and four treatment groups.
+
+# Required packages
+
+```{r packages}
+library(LongOmicsTraj)
+library(S4Vectors)
+library(SummarizedExperiment)
+library(MultiAssayExperiment)
+library(dplyr)
+library(ggplot2)
+```
+
+The optional sections use `cluster`, `matrixStats`, `patchwork`, `scales`,
+`withr` and `flexmix`.
+
+# Load and prepare the GLUCOLD example
+
+```{r load-data}
+data("lot_glucold")
+
+visits <- c(
+  "Baseline",
+  "6 Months",
+  "30 Months"
+)
+
+assay_name <- "transcriptomics"
+
+lot <- lot_glucold
+
+experiments <- MultiAssayExperiment::experiments(
+  lot@mae
+)
+
+se <- experiments[[assay_name]]
+
+metadata <- as.data.frame(
+  SummarizedExperiment::colData(se)
+)
+
+metadata$visit <- factor(
+  metadata$visit,
+  levels = visits,
+  ordered = TRUE
+)
+
+metadata$group <- factor(
+  metadata$group
+)
+
+stopifnot(
+  !anyNA(metadata$visit)
+)
+
+SummarizedExperiment::colData(se) <- S4Vectors::DataFrame(
+  metadata,
+  row.names = rownames(metadata)
+)
+
+experiments[[assay_name]] <- se
+
+lot@mae <- MultiAssayExperiment::MultiAssayExperiment(
+  experiments = experiments
+)
+
+methods::validObject(lot)
+
+lot
+```
+
+The visit order is set explicitly because topology labels depend on the
+chronological order of adjacent transitions.
+
+# Construct feature-level trajectories
+
+For this vignette, empirical group-by-visit means are used. The same clustering
+workflow can be applied after constructing a VMM with `lot_from_lmm()`,
+`lot_from_gam()` or `lot_from_masigpro()`.
+
+```{r empirical-vmm}
+lot_features <- lot_from_empirical(
+  object = lot,
+  assay = assay_name,
+  visits = visits,
+  group_col = "group",
+  visit_col = "visit",
+  estimator = "empirical",
+  overwrite = TRUE,
+  verbose = FALSE
+)
+
+utils::head(
+  as.data.frame(lot_features@vmm)
+)
+```
+
+# Map feature trajectories to OTS labels
+
+Adjacent visit-to-visit changes are calculated once. The example uses the
+hybrid thresholding strategy only as a reproducible demonstration; the
+threshold should be selected and examined through sensitivity analysis in
+substantive applications.
+
+```{r feature-ots}
+lot_features <- lot_compute_deltas(
+  object = lot_features,
+  assay = assay_name,
+  visits = visits,
+  overwrite = TRUE
+)
+
+lot_features <- lot_compute_thresholds(
+  object = lot_features,
+  assay = assay_name,
+  method = "hybrid",
+  visits = visits,
+  overwrite = TRUE,
+  verbose = FALSE
+)
+
+lot_features <- lot_map_to_ots(
+  object = lot_features,
+  assay = assay_name,
+  visits = visits,
+  overwrite = TRUE,
+  verbose = FALSE
+)
+
+table(
+  lot_features@ots$topology_label
+)
+```
+
+Each OTS is an ordered pair of transition states because GLUCOLD contains
+three visits. For example, `up_down` denotes an increase from baseline to
+6 months followed by a decrease from 6 to 30 months.
+
+# Cluster genes across all treatment groups
+
+`lot_from_clusters()` represents each gene by its complete set of
+group-by-visit means. Clustering therefore reflects combined longitudinal
+behaviour across all treatment arms rather than a single endpoint or group.
+
+The example uses k-means with four clusters and standardises each gene
+trajectory before clustering.
+
+```{r kmeans-clustering}
+lot_clusters <- lot_from_clusters(
+  object = lot_features,
+  assay = assay_name,
+  group_col = "group",
+  visit_col = "visit",
+  visits = visits,
+  k = 4L,
+  estimator = "kmeans",
+  scale_features = TRUE,
+  seed = 1L,
+  require_gene_ots = TRUE,
+  overwrite = TRUE,
+  verbose = FALSE
+)
+
+lot_clusters
+```
+
+The cluster memberships, cluster sizes, cluster profiles and clustering
+diagnostics are stored in the `results` slot.
+
+```{r inspect-clustering-results}
+as.data.frame(
+  lot_clusters@results$cluster_sizes
+)
+
+as.data.frame(
+  lot_clusters@results$cluster_diagnostics
+)
+
+utils::head(
+  as.data.frame(
+    lot_clusters@results$cluster_membership
+  )
+)
+```
+
+The VMM now contains cluster-centre trajectories rather than gene-level
+trajectories.
+
+```{r inspect-cluster-vmm}
+utils::head(
+  as.data.frame(lot_clusters@vmm)
+)
+```
+
+# Map cluster centres to topology labels
+
+Cluster centres can be processed by the same delta, threshold and OTS
+functions used for molecular features.
+
+```{r cluster-centre-ots}
+lot_clusters <- lot_compute_deltas(
+  object = lot_clusters,
+  assay = assay_name,
+  visits = visits,
+  overwrite = TRUE
+)
+
+lot_clusters <- lot_compute_thresholds(
+  object = lot_clusters,
+  assay = assay_name,
+  method = "hybrid",
+  visits = visits,
+  overwrite = TRUE,
+  verbose = FALSE
+)
+
+lot_clusters <- lot_map_to_ots(
+  object = lot_clusters,
+  assay = assay_name,
+  visits = visits,
+  overwrite = TRUE,
+  verbose = FALSE
+)
+
+as.data.frame(
+  lot_clusters@ots
+)
+```
+
+These cluster-centre OTS labels describe the representative trajectory of each
+cluster. They should be interpreted together with the feature-level topology
+composition stored during clustering.
+
+# Inspect topology composition within clusters
+
+When feature-level OTS labels are present before clustering,
+`lot_from_clusters()` stores the within-cluster topology distribution in
+`cluster_ots_distribution`.
+
+```{r cluster-ots-distribution}
+cluster_ots_distribution <- as.data.frame(
+  lot_clusters@results$cluster_ots_distribution
+)
+
+utils::head(
+  cluster_ots_distribution
+)
+```
+
+## Trajectory-arm plot
+
+The trajectory-arm plot shows that a conventional molecular-feature cluster
+may contain several distinct OTS classes. Arrow width is proportional to the
+within-cluster topology proportion.
+
+```{r trajectory-arms, fig.cap="Feature-level trajectory topologies within each cluster and treatment group. Arrow width represents the within-cluster topology proportion."}
+lot_plot_cluster_trajectory_arms(
+  object = lot_clusters,
+  top_n = 5L,
+  min_proportion = 0.05,
+  show_counts = TRUE,
+  show_percent = TRUE,
+  scale_width = TRUE,
+  ncol = 2
+)
+```
+
+# Quantify topology purity
+
+Topology purity is the proportion of genes assigned to the dominant OTS within
+each cluster-group combination. Entropy provides a complementary measure of
+within-cluster topology heterogeneity.
+
+```{r cluster-purity}
+purity_assignments <- as.data.frame(
+  lot_clusters@results$gene_ots
+) |>
+  dplyr::transmute(
+    gene_id = as.character(object_id),
+    cluster = as.character(cluster_id),
+    group = as.character(group),
+    topology_label = as.character(topology_label)
+  )
+
+purity <- lot_cluster_purity(
+  assignments = purity_assignments,
+  purity_threshold = 0.90
+)
+
+purity$cluster_group_purity
+
+purity$overall
+```
+
+A purity of one means that all genes in a cluster-group combination have the
+same OTS. Lower purity indicates that the cluster combines several trajectory
+topologies.
+
+# Calculate topology coverage and duplication
+
+High purity alone does not guarantee that a clustering solution represents
+distinct longitudinal behaviours. Several pure clusters may still have the
+same dominant topology. `lot_cluster_topology_score()` therefore reports
+topology coverage and duplicate topology counts separately from purity.
+
+```{r topology-score}
+cluster_diagnostics <- as.data.frame(
+  lot_clusters@results$cluster_diagnostics
+)
+
+minimum_cluster_size <- min(
+  as.data.frame(
+    lot_clusters@results$cluster_sizes
+  )$n_features
+)
+
+topology_score <- lot_cluster_topology_score(
+  purity = purity,
+  k = cluster_diagnostics$k[[1L]],
+  minimum_cluster_size = minimum_cluster_size
+)
+
+topology_score$group_summary
+
+topology_score$topology_repetition
+
+topology_score$overall
+```
+
+Topology coverage is the number of unique dominant topologies divided by the
+number of observed clusters within each group. Values below one indicate that
+multiple clusters share the same dominant temporal behaviour.
+
+# Plot cluster-centre trajectories
+
+Cluster profiles are available in both raw and scaled form.
+
+```{r cluster-centre-plot, fig.cap="Scaled cluster-centre trajectories across treatment groups and visits."}
+cluster_profiles <- as.data.frame(
+  lot_clusters@results$cluster_profiles
+) |>
+  dplyr::filter(
+    value_type == "scaled"
+  )
+
+ggplot(
+  cluster_profiles,
+  aes(
+    x = visit,
+    y = value,
+    group = group,
+    colour = group
+  )
+) +
+  geom_line(
+    linewidth = 0.9
+  ) +
+  geom_point(
+    size = 1.8
+  ) +
+  facet_wrap(
+    ~ cluster_id,
+    scales = "free_y"
+  ) +
+  labs(
+    title = "Cluster-centre longitudinal profiles",
+    x = "Visit",
+    y = "Scaled cluster centre",
+    colour = "Group"
+  ) +
+  theme_bw() +
+  theme(
+    axis.text.x = element_text(
+      angle = 30,
+      hjust = 1
+    ),
+    legend.position = "bottom"
+  )
+```
+
+# Alternative clustering with PAM
+
+`lot_from_clusters()` also supports partitioning around medoids. PAM is useful
+when a medoid-based solution is preferred and the optional `cluster` package is
+available.
+
+```{r pam-clustering, eval=requireNamespace("cluster", quietly=TRUE)}
+lot_pam <- lot_from_clusters(
+  object = lot_features,
+  assay = assay_name,
+  group_col = "group",
+  visit_col = "visit",
+  visits = visits,
+  k = 4L,
+  estimator = "pam",
+  scale_features = TRUE,
+  require_gene_ots = TRUE,
+  overwrite = TRUE,
+  verbose = FALSE
+)
+
+as.data.frame(
+  lot_pam@results$cluster_diagnostics
+)
+```
+
+# Topology-aware FlexMix clustering within one treatment arm
+
+`lot_from_flexmix_clusters()` fits finite mixtures of longitudinal regression
+trajectories within a selected group. Candidate values of `k` are compared
+using BIC, topology purity, the fraction of clusters passing the purity rule
+and minimum cluster size.
+
+The withdrawal arm is used here because it is expected to contain biologically
+meaningful non-monotonic responses.
+
+```{r flexmix-clustering, eval=requireNamespace("flexmix", quietly=TRUE)}
+withdrawal_group <- "ICS 6 months then withdrawal"
+
+lot_flexmix <- lot_from_flexmix_clusters(
+  object = lot_features,
+  assay = assay_name,
+  group = withdrawal_group,
+  visits = visits,
+  k = 2:5,
+  group_col = "group",
+  visit_col = "visit",
+  sample_col = "sample_id",
+  trajectory_source = "estimated",
+  trajectory_estimator = "empirical",
+  model = "quadratic",
+  scale_features = TRUE,
+  purity_threshold = 0.90,
+  required_passing_fraction = 0.80,
+  min_cluster_size = 5L,
+  nrep = 5L,
+  seed = 42L,
+  store_fits = FALSE,
+  overwrite = TRUE,
+  verbose = FALSE
+)
+
+as.data.frame(
+  lot_flexmix@results$flexmix_model_comparison
+)
+
+lot_flexmix@results$flexmix_selected_k
+
+lot_flexmix@results$flexmix_selection_reason
+```
+
+The selected resolution is the smallest candidate satisfying the topology
+purity and cluster-size criteria. If none satisfies both criteria, the
+lowest-BIC solution is selected.
+
+## Plot the cluster-selection path
+
+```{r cluster-selection-plot, eval=requireNamespace("flexmix", quietly=TRUE), fig.cap="Likelihood-based and topology-aware statistics across candidate FlexMix cluster resolutions."}
+lot_plot_cluster_selection(
+  object = lot_flexmix,
+  metrics = c(
+    "BIC",
+    "weighted_purity",
+    "passing_fraction",
+    "minimum_cluster_size"
+  ),
+  purity_threshold = 0.90,
+  required_passing_fraction = 0.80,
+  min_cluster_size = 5L,
+  show_selected = TRUE
+)
+```
+
+## Plot representative cluster trajectories and OTS composition
+
+```{r cluster-topology-plot, eval=requireNamespace("flexmix", quietly=TRUE) && requireNamespace("patchwork", quietly=TRUE), fig.cap="Representative FlexMix cluster trajectories and their feature-level OTS composition."}
+lot_plot_cluster_topology(
+  object = lot_flexmix,
+  group = withdrawal_group,
+  value_type = "scaled",
+  show_features = TRUE,
+  max_feature_lines = 30L,
+  purity_threshold = 0.90,
+  sort_by = "purity",
+  seed = 1L
+)
+```
+
+## Plot topology deviations
+
+The topology-deviation plot compares the frequency of each OTS within a cluster
+with its overall frequency among all clustered genes. Positive deviations
+indicate enrichment and negative deviations indicate depletion.
+
+```{r topology-deviation-plot, eval=requireNamespace("flexmix", quietly=TRUE), fig.cap="Enrichment or depletion of OTS classes within selected FlexMix clusters relative to the full clustered feature set."}
+lot_plot_topology_deviation(
+  object = lot_flexmix,
+  group = withdrawal_group,
+  min_abs_deviation = 0.02,
+  top_n = 6L
+)
+```
+
+# Plot representative genes
+
+Genes assigned to selected FlexMix clusters can be retrieved from the stored
+assignment table and visualised using the original longitudinal measurements.
+
+```{r representative-genes, eval=requireNamespace("flexmix", quietly=TRUE)}
+assignments <- as.data.frame(
+  lot_flexmix@results$flexmix_gene_assignments
+)
+
+representative_genes <- assignments |>
+  dplyr::filter(
+    !is.na(topology_label)
+  ) |>
+  dplyr::group_by(
+    cluster
+  ) |>
+  dplyr::slice_head(
+    n = 1L
+  ) |>
+  dplyr::ungroup() |>
+  dplyr::pull(
+    gene_id
+  )
+
+representative_genes
+```
+
+```{r representative-gene-plot, eval=requireNamespace("flexmix", quietly=TRUE), fig.cap="Observed longitudinal measurements for one representative gene from each selected FlexMix cluster."}
+lot_plot_trajectory(
+  object = lot_features,
+  features = representative_genes,
+  assay = assay_name,
+  groups = withdrawal_group,
+  estimator = "empirical",
+  show_subjects = TRUE,
+  summary = "mean_se",
+  facet_scales = "free_y"
+)
+```
+
+# Interpretation
+
+This workflow separates three related but distinct questions:
+
+1. **Do genes have similar numerical profiles?**  
+   Addressed by k-means, PAM or FlexMix clustering.
+
+2. **Do members of a cluster share the same temporal topology?**  
+   Addressed by topology purity and entropy.
+
+3. **Do different clusters represent distinct temporal behaviours?**  
+   Addressed by topology coverage and duplicate topology counts.
+
+A clustering solution may have favourable likelihood or compactness while
+still merging several OTS classes, or it may split one dominant topology into
+several clusters. LongOmicsTraj therefore reports conventional clustering
+diagnostics and topology-aware summaries separately rather than combining them
+into a single unvalidated score.
+
+# Session information
+
+```{r session-info}
+sessionInfo()
+```
