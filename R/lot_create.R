@@ -217,9 +217,9 @@ lot_create <- function(
     )
   }
   
-  if (any(!is.finite(expression), na.rm = TRUE)) {
+  if (any(is.infinite(expression))) {
     stop(
-      "`expression` contains non-finite values such as Inf or -Inf.",
+      "`expression` contains infinite values such as Inf or -Inf.",
       call. = FALSE
     )
   }
