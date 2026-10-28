@@ -7,7 +7,13 @@
 \usage{
 lot_compute_deltas(object, ...)
 
-\S4method{lot_compute_deltas}{LongOmicsTraj}(object, assay, visits, overwrite = FALSE)
+\S4method{lot_compute_deltas}{LongOmicsTraj}(
+  object,
+  assay,
+  visits,
+  overwrite = FALSE,
+  center = c("none", "median", "mean")
+)
 }
 \arguments{
 \item{object}{A `LongOmicsTraj` object.}
@@ -19,12 +25,24 @@ lot_compute_deltas(object, ...)
 \item{visits}{Character vector giving the visits in chronological order.}
 
 \item{overwrite}{Logical; overwrite existing delta results when `TRUE`.}
+
+\item{center}{Character string controlling between-visit centring of the
+visit-level trajectories before changes are calculated. `"none"` (the
+default) uses the trajectories as estimated. `"median"` or `"mean"`
+subtracts, within each group and visit, the median or mean of the
+estimated values across all features of the assay. Centring removes
+visit-wide offsets that affect every feature in the same direction,
+such as differences in capture efficiency or tissue composition between
+ordered spatial windows, so that topology labels describe relative
+rather than global change.}
 }
 \value{
 A `LongOmicsTraj` object containing updated molecular-change
 results.
 
-A `LongOmicsTraj` object with updated delta results.
+A `LongOmicsTraj` object with updated delta results. When
+  centring is applied, the offset removed for each group and visit is
+  stored in `results$visit_centring`.
 }
 \description{
 Computes feature-level changes between consecutive visits from stored
@@ -32,6 +50,12 @@ visit-level molecular trajectories.
 
 Calculates feature-level changes between consecutive visits from the
 visit-level molecular trajectories stored in a `LongOmicsTraj` object.
+}
+\details{
+Centring assumes that most features do not change between consecutive
+visits. It is intended for settings where visit-wide shifts are technical
+or compositional, for example depth windows in spatial omics. It should not
+be used when a genuine global change across most features is expected.
 }
 \examples{
 data("lot_glucold_ots")
@@ -64,5 +88,16 @@ utils::head(
     )
   ]
 )
+
+# Remove visit-wide offsets before computing changes
+centred <- lot_compute_deltas(
+  object = lot_glucold_ots,
+  assay = "transcriptomics",
+  visits = visits,
+  overwrite = TRUE,
+  center = "median"
+)
+
+as.data.frame(centred@results$visit_centring)
 
 }
