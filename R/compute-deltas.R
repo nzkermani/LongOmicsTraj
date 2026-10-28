@@ -15,17 +15,26 @@
 #'   visit-wide offsets that affect every feature in the same direction,
 #'   such as differences in capture efficiency or tissue composition between
 #'   ordered spatial windows, so that topology labels describe relative
-#'   rather than global change.
+#'   rather than global change. `"relative"` removes only each group's
+#'   deviation from the shift shared by all groups: for every group and
+#'   transition, the median change across features is computed, and the
+#'   difference between that median and the median of it across groups is
+#'   subtracted. Shifts common to all groups (likely biological) are kept;
+#'   shifts specific to one group (likely technical) are removed.
 #'
 #' @return A `LongOmicsTraj` object with updated delta results. When
 #'   centring is applied, the offset removed for each group and visit is
 #'   stored in `results$visit_centring`.
 #'
 #' @details
-#' Centring assumes that most features do not change between consecutive
-#' visits. It is intended for settings where visit-wide shifts are technical
-#' or compositional, for example depth windows in spatial omics. It should not
-#' be used when a genuine global change across most features is expected.
+#' `"median"` and `"mean"` centring assume that most features do not change
+#' between consecutive visits, or change up and down in similar numbers. When
+#' many features genuinely shift in one direction in every group, they remove
+#' part of that real change. `"relative"` does not need this assumption, but
+#' it needs at least three groups so that the shared shift can be estimated
+#' robustly; with two groups the shared shift is their average.
+#' For `"relative"`, `results$visit_centring` stores, per group and
+#' transition, the offset removed from that group's changes.
 #'
 #' @examples
 #' data("lot_glucold_ots")
@@ -80,7 +89,7 @@ setMethod(
     assay,
     visits,
     overwrite = FALSE,
-    center = c("none", "median", "mean")
+    center = c("none", "median", "mean", "relative")
   ) {
 
     center <- match.arg(center)
@@ -96,7 +105,7 @@ setMethod(
     }
 
     # Optional between-visit centring (removes visit-wide offsets)
-    if (center != "none") {
+    if (center %in% c("median", "mean")) {
       fun <- if (center == "median") stats::median else base::mean
       key <- paste(vmm$group, vmm$visit, sep = "\r")
       offset <- tapply(vmm$estimated_value, key, fun, na.rm = TRUE)
@@ -141,6 +150,34 @@ setMethod(
     })
 
     deltas <- do.call(rbind, res)
+
+    # Optional group-relative centring of changes
+    if (center == "relative") {
+      groups <- unique(deltas$group)
+      if (length(groups) < 2L) {
+        stop("center = \"relative\" needs at least two groups.", call. = FALSE)
+      }
+      if (length(groups) < 3L) {
+        warning("center = \"relative\" with two groups uses their average ",
+                "shift as the shared shift.", call. = FALSE)
+      }
+      key <- paste(deltas$group, deltas$transition, sep = "\r")
+      off <- tapply(deltas$delta_hat, key, stats::median, na.rm = TRUE)
+      parts <- strsplit(names(off), "\r", fixed = TRUE)
+      og <- vapply(parts, `[`, character(1), 1L)
+      ot <- vapply(parts, `[`, character(1), 2L)
+      shared <- tapply(as.numeric(off), ot, stats::median)
+      adj <- as.numeric(off) - shared[ot]
+      names(adj) <- names(off)
+      deltas$delta_hat <- deltas$delta_hat - adj[key]
+      object@results$visit_centring <- S4Vectors::DataFrame(
+        group = og,
+        transition = ot,
+        method = center,
+        shared_shift = as.numeric(shared[ot]),
+        offset = as.numeric(adj)
+      )
+    }
 
     object@deltas <- S4Vectors::DataFrame(deltas)
 

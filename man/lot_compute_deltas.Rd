@@ -12,7 +12,7 @@ lot_compute_deltas(object, ...)
   assay,
   visits,
   overwrite = FALSE,
-  center = c("none", "median", "mean")
+  center = c("none", "median", "mean", "relative")
 )
 }
 \arguments{
@@ -34,7 +34,12 @@ estimated values across all features of the assay. Centring removes
 visit-wide offsets that affect every feature in the same direction,
 such as differences in capture efficiency or tissue composition between
 ordered spatial windows, so that topology labels describe relative
-rather than global change.}
+rather than global change. `"relative"` removes only each group's
+deviation from the shift shared by all groups: for every group and
+transition, the median change across features is computed, and the
+difference between that median and the median of it across groups is
+subtracted. Shifts common to all groups (likely biological) are kept;
+shifts specific to one group (likely technical) are removed.}
 }
 \value{
 A `LongOmicsTraj` object containing updated molecular-change
@@ -52,10 +57,14 @@ Calculates feature-level changes between consecutive visits from the
 visit-level molecular trajectories stored in a `LongOmicsTraj` object.
 }
 \details{
-Centring assumes that most features do not change between consecutive
-visits. It is intended for settings where visit-wide shifts are technical
-or compositional, for example depth windows in spatial omics. It should not
-be used when a genuine global change across most features is expected.
+`"median"` and `"mean"` centring assume that most features do not change
+between consecutive visits, or change up and down in similar numbers. When
+many features genuinely shift in one direction in every group, they remove
+part of that real change. `"relative"` does not need this assumption, but
+it needs at least three groups so that the shared shift can be estimated
+robustly; with two groups the shared shift is their average.
+For `"relative"`, `results$visit_centring` stores, per group and
+transition, the offset removed from that group's changes.
 }
 \examples{
 data("lot_glucold_ots")
