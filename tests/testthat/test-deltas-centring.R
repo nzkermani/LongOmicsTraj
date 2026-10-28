@@ -61,3 +61,38 @@ test_that("centring argument is validated", {
                        overwrite = TRUE, center = "zscore")
   )
 })
+
+
+test_that("relative centring removes group-specific but keeps shared shifts", {
+
+  data("lot_glucold", package = "LongOmicsTraj")
+  visits <- c("Baseline", "6 Months", "30 Months")
+  res <- lot_from_empirical(lot_glucold, assay = "transcriptomics",
+                            visits = visits, overwrite = TRUE)
+  vmm <- as.data.frame(res@vmm)
+  groups <- unique(vmm$group)
+  # shared shift of +1 at the last visit in every group, plus +2 more in one group
+  late <- vmm$visit == "30 Months"
+  vmm$estimated_value[late] <- vmm$estimated_value[late] + 1
+  one <- late & vmm$group == groups[1]
+  vmm$estimated_value[one] <- vmm$estimated_value[one] + 2
+  res@vmm <- S4Vectors::DataFrame(vmm)
+
+  raw <- as.data.frame(lot_compute_deltas(res, assay = "transcriptomics",
+                                          visits = visits, overwrite = TRUE)@deltas)
+  rel <- suppressWarnings(lot_compute_deltas(res, assay = "transcriptomics",
+                                             visits = visits, overwrite = TRUE,
+                                             center = "relative"))
+  dr <- as.data.frame(rel@deltas)
+  med <- function(d, g) stats::median(d$delta_hat[d$to_visit == "30 Months" & d$group == g])
+
+  # the group-specific extra shift is removed: late medians now agree across groups
+  meds <- vapply(groups, function(g) med(dr, g), numeric(1))
+  expect_lt(diff(range(meds)), 0.1)
+  # the shared shift is kept when groups agree (with two groups it is their average)
+  expect_gt(min(meds), 0.5)
+  expect_true(all(as.data.frame(rel@results$visit_centring)$method == "relative"))
+  # transitions not affected by any shift keep their raw values up to a small offset
+  early <- raw$to_visit == "6 Months"
+  expect_lt(max(abs(dr$delta_hat[early] - raw$delta_hat[early])), 0.5)
+})
