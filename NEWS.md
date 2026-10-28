@@ -1,5 +1,11 @@
 # LongOmicsTraj NEWS
 
+## Development (spatial-visit-centring)
+
+### New features
+
+* `lot_compute_deltas()` gains a `center` argument (`"none"`, the default, `"median"` or `"mean"`). Centring removes visit-wide offsets that shift every feature in the same direction before changes are computed, which is needed when ordered "visits" are spatial windows (for example tissue depth) that can differ globally in capture efficiency or composition. The removed offsets are stored in `results$visit_centring`. Default behaviour is unchanged.
+
 ## LongOmicsTraj 0.99.0
 
 ### New features
