@@ -1,0 +1,229 @@
+---
+title: "Spatial omics with LongOmicsTraj: a practical guide"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Spatial omics with LongOmicsTraj: a practical guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 3.6)
+```
+
+Many tissues are organised along a depth axis: cortical layers, the epidermis,
+the airway wall from epithelium to submucosa. Spatial transcriptomics can place
+every spot or cell on that axis, but most tools analyse one section at a time.
+This guide shows how to compare depth patterns **across donors and disease
+groups** with LongOmicsTraj, treating ordered depth windows the way the package
+treats visits in a longitudinal study:
+
+| Longitudinal study | Spatial study |
+|---|---|
+| visit | depth window (e.g. upper, deep, white matter) |
+| subject | tissue section |
+| group or arm | donor, or disease group |
+
+The workflow has five steps, each one function call:
+
+1. **Pick a reliable depth map** with `lot_consensus_restart()`.
+2. **Build depth-window pseudobulk** with `lot_spatial_pseudobulk()`.
+3. **Check that depth patterns replicate across donors** with `lot_topology_agreement()`.
+4. **Label every gene's depth pattern** with the standard LongOmicsTraj workflow, using `center = "relative"`.
+5. **Find genes whose depth pattern differs between groups** with `lot_query()`.
+
+## What you need
+
+* A **count matrix** (genes × spots or cells), from Visium, Xenium, CosMx, MERFISH or similar.
+* A **depth coordinate or layer label for every spot**. Any method works: GASTON
+  isodepth, Belayer, distance from a tissue boundary, or annotated layers.
+  If your depth model has random restarts, keep all of them for step 1.
+* **Several sections per donor** if possible, and **at least three donors or
+  groups**. Relative centring (step 4) needs three or more groups.
+
+## Example data
+
+We simulate six donors (three healthy, three with disease), two sections each,
+and 150 genes. The simulation builds in the three problems we met in real
+cortex data:
+
+* most genes fall from the deep window into white matter **in every donor**
+  (shared biology that must be kept);
+* donor H2 has a burst of mitochondrial reads in its upper window, which after
+  library-size normalisation makes every other gene appear to rise from upper
+  to deep (a **donor-specific technical offset** that must be removed);
+* 20 genes rise into white matter **only in disease** (the signal we want).
+
+```{r simulate}
+suppressPackageStartupMessages(library(LongOmicsTraj))
+set.seed(42)
+donors <- c("H1", "H2", "H3", "D1", "D2", "D3")
+G <- 150; genes <- c(paste0("gene", 1:(G - 10)), paste0("MT-", 1:10))
+step <- 0.6
+up1 <- sample(c(-1, 0, 1), G, TRUE, c(0.15, 0.7, 0.15))             # upper -> deep
+up2 <- ifelse(runif(G) < 0.5, -1, sample(c(0, 1), G, TRUE, c(0.8, 0.2)))  # deep -> WM: many fall
+up1[(G - 9):G] <- 0; up2[(G - 9):G] <- 0                             # MT genes flat
+disease_genes <- which(up1 == 0 & up2 == 0)[1:20]                    # flat in health ...
+base <- rnorm(G, 0, 0.8); base[(G - 9):G] <- 1
+
+spots <- list(); counts <- list()
+for (d in donors) for (s in 1:2) {
+  xy <- expand.grid(x = 1:20, y = 1:20)
+  depth <- (xy$y - 1) / 19 + 0.05 * sin(xy$x / 3)                    # gently curved layers
+  depth <- pmin(pmax(depth, 0), 1)
+  w <- cut(depth, c(-Inf, 1/3, 2/3, Inf), labels = FALSE)
+  eff2 <- up2
+  if (startsWith(d, "D")) eff2[disease_genes] <- 1                    # ... rise into WM in disease
+  logmu <- base + step * (outer(rep(1, G), w >= 2) * up1 + outer(rep(1, G), w >= 3) * eff2)
+  if (d == "H2") logmu[(G - 9):G, w == 1] <- logmu[(G - 9):G, w == 1] + 3.5   # MT burst
+  id <- paste0(d, "_s", s, "_", seq_len(nrow(xy)))
+  counts[[length(counts) + 1]] <- matrix(rpois(G * nrow(xy), 3 * exp(logmu)), G,
+                                         dimnames = list(genes, id))
+  spots[[length(spots) + 1]] <- data.frame(section = paste0(d, "_s", s), donor = d,
+                                           condition = ifelse(startsWith(d, "H"), "Healthy", "Disease"),
+                                           true_depth = depth, row.names = id)
+}
+counts <- do.call(cbind, counts); spots <- do.call(rbind, spots)
+dim(counts)
+```
+
+## Step 1: pick a reliable depth map
+
+Depth models such as GASTON are trained from several random restarts. The
+default is to keep the restart with the lowest training loss, but in the human
+cortex this produced a folded or misoriented depth map in half of the sections.
+`lot_consensus_restart()` instead keeps the restart that agrees best with all
+the others. It needs no labels.
+
+Here each section gets ten restarts: seven faithful, two folded around the
+middle of the tissue and one with its direction flipped. In real use, the
+columns are the depth coordinates your tool returned for each restart.
+
+```{r restarts}
+pick <- lapply(split(seq_len(nrow(spots)), spots$section), function(i) {
+  t <- spots$true_depth[i]
+  restarts <- cbind(sapply(1:7, function(r) t + rnorm(length(t), 0, 0.04)),
+                    folded_1 = abs(t - 0.5), folded_2 = abs(t - 0.45),
+                    flipped = 1 - t + rnorm(length(t), 0, 0.04))
+  res <- lot_consensus_restart(restarts)
+  depth <- restarts[, res$best]
+  if (stats::cor(depth, t, method = "spearman") < 0) depth <- 1 - depth   # orient (see note)
+  data.frame(spot = rownames(spots)[i], depth = depth, chosen = res$best)
+})
+pick <- do.call(rbind, pick)
+table(chosen_restart = pick$chosen)
+spots$depth <- pick$depth[match(rownames(spots), pick$spot)]
+```
+
+No section chose a folded restart. Agreement is measured with absolute
+correlations, so a flipped restart can be chosen; orient the chosen depth with
+one known marker or landmark (for example a myelin gene increasing towards white
+matter). Here we orient against the simulated truth for brevity.
+
+## Step 2: build depth-window pseudobulk
+
+Cut the depth coordinate into ordered windows and average each section's
+spots within each window. Use `window_col` instead of `depth_col` if you
+already have layer labels.
+
+```{r pseudobulk}
+pb <- lot_spatial_pseudobulk(counts, spots, section_col = "section", group_col = "donor",
+                             depth_col = "depth", breaks = c(0, 1/3, 2/3, 1),
+                             window_levels = c("upper", "deep", "WM"))
+head(pb$metadata)
+```
+
+`pb$expression` and `pb$metadata` go straight into `lot_create()`.
+
+## Step 3: check that depth patterns replicate across donors
+
+Before interpreting anything, check that depth patterns are reproducible. For
+the healthy donors, `lot_topology_agreement()` labels every gene's depth
+pattern in each donor and reports the fraction of genes with the same pattern
+in all of them. The p-value comes from re-running everything after shuffling
+window order within each section.
+
+```{r agreement}
+healthy <- pb$metadata$group %in% c("H1", "H2", "H3")
+E_h <- pb$expression[, healthy]; M_h <- pb$metadata[healthy, ]
+visits <- c("upper", "deep", "WM")
+agree <- lapply(c(none = "none", median = "median", relative = "relative"), function(cc)
+  lot_topology_agreement(E_h, M_h, visits, center = cc, nperm = 19))
+data.frame(agreement = sapply(agree, `[[`, "agreement"),
+           kappa = sapply(agree, `[[`, "kappa"),
+           null_mean = sapply(agree, function(a) mean(a$null)),
+           p = sapply(agree, `[[`, "p"))
+```
+
+Without centring, donor H2's offset breaks agreement. Median centring removes
+the offset but also removes the real, shared fall into white matter. Relative
+centring removes only what is specific to one donor. With 19 permutations the
+smallest possible p-value is 0.05; use 999 for a paper.
+
+## Step 4: label every gene's depth pattern
+
+Now run the standard workflow on all six donors, each donor as a group, with
+`center = "relative"`.
+
+```{r workflow}
+lot <- lot_create(expression = pb$expression, metadata = pb$metadata, assay = "rna",
+                  visit_levels = visits, feature_type = "gene")
+lot <- lot_from_empirical(lot, assay = "rna", visits = visits, group_col = "group",
+                          visit_col = "visit", estimator = "empirical", verbose = FALSE)
+lot <- lot_compute_deltas(lot, assay = "rna", visits = visits, center = "relative")
+lot <- lot_compute_thresholds(lot, assay = "rna", visits = visits, method = "hybrid",
+                              k = 0.25, verbose = FALSE)
+lot <- lot_map_to_ots(lot, assay = "rna", visits = visits, verbose = FALSE)
+```
+
+Always look at the offsets that were removed. The shared shift is kept; only
+H2's upper-to-deep offset is large:
+
+```{r offsets}
+off <- as.data.frame(lot@results$visit_centring)
+off[order(-abs(off$offset)), ][1:4, ]
+```
+
+An offset in one donor only is likely technical. An offset shared by all
+donors is likely biology and is kept by relative centring.
+
+## Step 5: find genes whose depth pattern differs between groups
+
+`lot_query()` with `conditions` finds genes that satisfy a topology condition
+in every named group. Here: flat in all three healthy donors, rising into
+white matter in all three disease donors.
+
+```{r query}
+hits <- lot_query(lot, conditions = list(H1 = "flat_flat", H2 = "flat_flat", H3 = "flat_flat",
+                                         D1 = "flat_up", D2 = "flat_up", D3 = "flat_up"))
+found <- unique(as.data.frame(hits)$object_id)
+c(found = length(found), true_positives = sum(found %in% genes[disease_genes]),
+  planted = length(disease_genes))
+```
+
+Requiring the pattern in every donor is strict, which keeps false positives
+low; relax it with `NOT()` or by querying fewer donors if your study is larger
+and more heterogeneous.
+
+## Practical recommendations
+
+These come from applying the workflow to human cortex (Visium, 12 sections from
+3 donors) and lung fibrosis (Xenium), and from simulations with known truth.
+
+* **Depth.** Keep all restarts of your depth model and choose by agreement, not
+  by loss. Orient the chosen depth with one known marker.
+* **Windows.** Two to four windows with at least 20 spots each per section work
+  well. Name them by depth order, not by expected cell types.
+* **Centring.** Use `center = "relative"` with three or more groups. Use
+  `"median"` only when you are confident that most genes do not change between
+  windows. Always inspect `results$visit_centring`.
+* **Thresholds.** The hybrid rule with `k` between 0.25 and 0.5 gave stable
+  results. Avoid quantile thresholds for depth data: they label most changes
+  as flat by construction.
+* **Statistics.** Treat donors, not spots or cells, as the units of
+  replication. Use at least 999 permutations for reported p-values, and report
+  the excess over the permutation null (`z`) alongside p.
+
+```{r session}
+sessionInfo()
+```
