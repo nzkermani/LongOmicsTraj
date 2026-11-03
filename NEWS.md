@@ -1,6 +1,6 @@
 # LongOmicsTraj NEWS
 
-## Development (spatial-visit-centring)
+## LongOmicsTraj 0.99.1
 
 ### New features
 
