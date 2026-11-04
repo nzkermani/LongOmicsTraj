@@ -86,7 +86,7 @@ object and should be used instead of direct slot access.
     changes as increasing, decreasing or stable.
   }
   \item{`lot_ots()`}{
-    Returns the Omics Trajectory Signature assignments obtained by combining
+    Returns the Ordinal Trajectory State assignments obtained by combining
     the classified transitions across visits.
   }
   \item{`lot_relationships()`}{
@@ -139,7 +139,7 @@ utils::head(
   ]
 )
 
-## Inspect the resulting Omics Trajectory Signatures.
+## Inspect the resulting Ordinal Trajectory States.
 ots <- lot_ots(lot_glucold_ots)
 table(
   as.data.frame(ots)$topology_label

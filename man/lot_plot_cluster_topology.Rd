@@ -47,7 +47,7 @@ A `patchwork` plot object.
 }
 \description{
 Displays the representative longitudinal trajectory and the
-within-cluster Omics Trajectory Signature composition for each selected
+within-cluster Ordinal Trajectory State composition for each selected
 FlexMix cluster.
 }
 \details{

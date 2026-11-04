@@ -319,7 +319,7 @@ as.data.frame(
 )
 ```
 
-Each gene is assigned an Omics Trajectory Signature such as:
+Each gene is assigned an Ordinal Trajectory State such as:
 
 - `flat_flat`: stable;
 - `up_up`: sustained increase;
@@ -425,7 +425,7 @@ p_ots_distribution <- ggplot2::ggplot(
     name = "OTS"
   ) +
   ggplot2::labs(
-    title = "Distribution of Omics Trajectory Signatures",
+    title = "Distribution of Ordinal Trajectory States",
     subtitle = "maSigPro estimates across GLUCOLD treatment groups",
     x = "Treatment group",
     y = "Proportion of genes"
@@ -514,7 +514,7 @@ p_query <- ggplot2::ggplot(
   ggplot2::labs(
     title = "Treatment-specific trajectory query",
     subtitle = "Genes satisfying the predefined GLUCOLD trajectory conditions",
-    x = "Omics Trajectory Signature",
+    x = "Ordinal Trajectory State",
     y = "Number of genes",
     fill = "Treatment group"
   ) +
@@ -842,7 +842,7 @@ or:
 
 ## Summary
 
-LongOmicsTraj starts from an expression matrix and clinical metadata. It estimates longitudinal profiles, computes adjacent changes and maps each feature to an interpretable trajectory signature. These signatures can then be compared across groups, queried using biological conditions and linked back to the observed molecular profiles.
+LongOmicsTraj starts from an expression matrix and clinical metadata. It estimates longitudinal profiles, computes adjacent changes and maps each feature to an interpretable ordinal trajectory state. These states can then be compared across groups, queried using biological conditions and linked back to the observed molecular profiles.
 
 ## Quick reference
 

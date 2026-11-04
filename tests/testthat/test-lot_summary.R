@@ -141,7 +141,7 @@ test_that("printed lot_summary contains key sections", {
   
   expect_match(
     output_text,
-    "Omics Trajectory Signatures"
+    "Ordinal Trajectory States"
   )
   
   expect_match(

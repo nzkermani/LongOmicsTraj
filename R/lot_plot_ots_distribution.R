@@ -1,7 +1,7 @@
-#' Plot the distribution of Omics Trajectory Signatures
+#' Plot the distribution of Ordinal Trajectory States
 #'
 #' Summarises the proportion or number of molecular features assigned
-#' to each Omics Trajectory Signature within each group.
+#' to each Ordinal Trajectory State within each group.
 #'
 #' @param object A `LongOmicsTraj` object containing computed OTS results.
 #' @param estimator Optional estimator name used to filter the OTS results.
@@ -212,7 +212,7 @@ lot_plot_ots_distribution <- function(
       name = "OTS"
     ) +
     ggplot2::labs(
-      title = "Distribution of Omics Trajectory Signatures",
+      title = "Distribution of Ordinal Trajectory States",
       subtitle = if (is.null(estimator)) {
         NULL
       } else {

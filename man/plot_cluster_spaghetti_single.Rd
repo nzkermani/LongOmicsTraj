@@ -21,7 +21,7 @@ A `ggplot` object.
 }
 \description{
 Creates a spaghetti plot for a single molecular-feature cluster.
-Individual feature trajectories are coloured by their Omics Trajectory
-Signature, while the representative cluster trajectory is displayed in
+Individual feature trajectories are coloured by their Ordinal Trajectory
+State, while the representative cluster trajectory is displayed in
 black.
 }

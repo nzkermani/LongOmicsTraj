@@ -1,6 +1,6 @@
 #' Compare trajectory estimators
 #'
-#' Combines Omics Trajectory Signature assignments from two or more
+#' Combines Ordinal Trajectory State assignments from two or more
 #' `LongOmicsTraj` objects into a common table suitable for agreement and
 #' consensus analyses.
 #'

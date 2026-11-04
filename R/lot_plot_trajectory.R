@@ -2,7 +2,7 @@
 #'
 #' Plots observed longitudinal measurements for one or more molecular
 #' features across clinical groups. Individual-subject profiles, group
-#' means, uncertainty intervals and assigned Omics Trajectory Signatures
+#' means, uncertainty intervals and assigned Ordinal Trajectory States
 #' can be displayed.
 #'
 #' @param object A `LongOmicsTraj` object.

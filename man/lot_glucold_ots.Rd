@@ -15,7 +15,7 @@ data(lot_glucold_ots)
 }
 \description{
 A processed `LongOmicsTraj` object containing model-estimated molecular
-trajectories, between-visit changes, thresholds and Omics Trajectory
-Signature assignments.
+trajectories, between-visit changes, thresholds and Ordinal Trajectory
+State assignments.
 }
 \keyword{datasets}

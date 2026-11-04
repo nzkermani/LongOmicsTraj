@@ -1,7 +1,7 @@
 #' Build the cluster evaluation table
 #'
 #' Combines molecular-feature-to-cluster relationships with feature-level
-#' Omics Trajectory Signature assignments.
+#' Ordinal Trajectory State assignments.
 #'
 #' @param object A `LongOmicsTraj` object containing cluster relationships
 #'   and feature-level OTS results.
