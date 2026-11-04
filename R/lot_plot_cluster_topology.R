@@ -1,7 +1,7 @@
 #' Plot trajectory topology profiles for fitted clusters
 #'
 #' Displays the representative longitudinal trajectory and the
-#' within-cluster Omics Trajectory Signature composition for each selected
+#' within-cluster Ordinal Trajectory State composition for each selected
 #' FlexMix cluster.
 #'
 #' The left-hand panel shows the representative cluster trajectory and,

@@ -1,6 +1,6 @@
 #' Calculate topology purity within clusters
 #'
-#' Calculates the dominant Omics Trajectory Signature, topology purity
+#' Calculates the dominant Ordinal Trajectory State, topology purity
 #' and entropy within each cluster and clinical group.
 #'
 #' Topology purity is defined as the proportion of features belonging to

@@ -27,7 +27,7 @@ A `DFrame` containing one row per molecular feature with the
   consensus topology, agreement count and number of available assignments.
 }
 \description{
-Combines Omics Trajectory Signature assignments from multiple estimators
+Combines Ordinal Trajectory State assignments from multiple estimators
 into a consensus topology label.
 
 Combines OTS assignments stored in a `DFrame` and returns a consensus

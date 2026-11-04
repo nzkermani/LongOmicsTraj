@@ -1,7 +1,7 @@
 #' Summarise a LongOmicsTraj object
 #'
-#' Summarises assays, study design, available estimators and Omics
-#' Trajectory Signature distributions stored in a `LongOmicsTraj` object.
+#' Summarises assays, study design, available estimators and Ordinal
+#' Trajectory State distributions stored in a `LongOmicsTraj` object.
 #'
 #' @param object A `LongOmicsTraj` object.
 #' @param estimator Optional estimator used to filter OTS results.
@@ -557,7 +557,7 @@ print.lot_summary <- function(
   # OTS summary
   # ---------------------------------------------------------------------------
   
-  cat("\nOmics Trajectory Signatures\n")
+  cat("\nOrdinal Trajectory States\n")
   
   cat(
     sprintf(

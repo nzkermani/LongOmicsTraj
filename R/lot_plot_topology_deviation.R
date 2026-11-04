@@ -1,7 +1,7 @@
 #' Plot topology deviations within clusters
 #'
-#' Creates a PAMR-inspired nail plot showing how strongly each Omics
-#' Trajectory Signature is enriched or depleted within each cluster compared
+#' Creates a PAMR-inspired nail plot showing how strongly each Ordinal
+#' Trajectory State is enriched or depleted within each cluster compared
 #' with its overall frequency.
 #'
 #' For topology `t` in cluster `c`, deviation is calculated as:
@@ -431,7 +431,7 @@ lot_plot_topology_deviation <- function(
         "clustered feature set."
       ),
       x = "Cluster proportion u2212 overall proportion",
-      y = "Omics Trajectory Signature",
+      y = "Ordinal Trajectory State",
       linetype = NULL,
       shape = NULL
     ) +

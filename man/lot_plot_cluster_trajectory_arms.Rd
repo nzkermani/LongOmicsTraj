@@ -44,8 +44,8 @@ for display. The default is `0`.}
 A `ggplot` object.
 }
 \description{
-Visualises the distribution of feature-level Omics Trajectory
-Signatures within each molecular-feature cluster. Each panel represents
+Visualises the distribution of feature-level Ordinal Trajectory
+States within each molecular-feature cluster. Each panel represents
 one cluster and clinical group. Arrows emerge from a shared cluster node
 and represent the distinct trajectory classes found inside that cluster.
 }

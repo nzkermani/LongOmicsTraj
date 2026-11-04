@@ -424,7 +424,7 @@ p_distribution <- ggplot2::ggplot(
     name = "Assigned OTS"
   ) +
   ggplot2::labs(
-    title = "Distribution of Omics Trajectory Signatures in GLUCOLD",
+    title = "Distribution of Ordinal Trajectory States in GLUCOLD",
     subtitle = paste0(
       "Comparison of trajectory estimators across three visits; ",
       length(unique(clinical_ots_compiled$Feature)),

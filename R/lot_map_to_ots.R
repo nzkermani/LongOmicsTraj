@@ -1,7 +1,7 @@
 #' Internal OTS computation
 #'
 #' Converts molecular deltas into transition states using feature-specific
-#' thresholds and combines those states into Omics Trajectory Signature
+#' thresholds and combines those states into Ordinal Trajectory State
 #' labels.
 #'
 #' @param deltas A data frame or `DataFrame` containing molecular-change
@@ -9,7 +9,7 @@
 #' @param thresholds A data frame or `DataFrame` containing feature-specific
 #'   thresholds.
 #'
-#' @return A `DataFrame` containing Omics Trajectory Signature assignments.
+#' @return A `DataFrame` containing Ordinal Trajectory State assignments.
 #'
 #' @keywords internal
 .compute_ots <- function(
@@ -175,10 +175,10 @@
 }
 
 
-#' Map molecular changes to Omics Trajectory Signatures
+#' Map molecular changes to Ordinal Trajectory States
 #'
 #' Classifies feature-level molecular changes between consecutive visits and
-#' combines the transition states into Omics Trajectory Signature labels.
+#' combines the transition states into Ordinal Trajectory State labels.
 #'
 #' The method uses delta estimates and thresholds already stored in the
 #' `LongOmicsTraj` object.

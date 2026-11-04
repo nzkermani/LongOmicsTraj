@@ -3,7 +3,7 @@
 \name{lot_map_to_ots}
 \alias{lot_map_to_ots}
 \alias{lot_map_to_ots,LongOmicsTraj-method}
-\title{Map molecular changes to Omics Trajectory Signatures}
+\title{Map molecular changes to Ordinal Trajectory States}
 \usage{
 lot_map_to_ots(object, visits, overwrite = FALSE, ...)
 
@@ -25,10 +25,10 @@ A `LongOmicsTraj` object with updated OTS assignments.
 }
 \description{
 Classifies molecular changes between consecutive visits and combines them
-into feature-level Omics Trajectory Signature labels.
+into feature-level Ordinal Trajectory State labels.
 
 Classifies feature-level molecular changes between consecutive visits and
-combines the transition states into Omics Trajectory Signature labels.
+combines the transition states into Ordinal Trajectory State labels.
 }
 \details{
 The method uses delta estimates and thresholds already stored in the

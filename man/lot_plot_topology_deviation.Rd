@@ -32,8 +32,8 @@ cluster.}
 A `ggplot` object.
 }
 \description{
-Creates a PAMR-inspired nail plot showing how strongly each Omics
-Trajectory Signature is enriched or depleted within each cluster compared
+Creates a PAMR-inspired nail plot showing how strongly each Ordinal
+Trajectory State is enriched or depleted within each cluster compared
 with its overall frequency.
 }
 \details{

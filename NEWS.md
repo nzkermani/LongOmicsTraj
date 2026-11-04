@@ -1,5 +1,9 @@
 # LongOmicsTraj NEWS
 
+## LongOmicsTraj 0.99.2
+
+* OTS now stands for Ordinal Trajectory States (previously Omics Trajectory Signatures) throughout the documentation, vignettes and printed output. Function names, arguments and results are unchanged.
+
 ## LongOmicsTraj 0.99.1
 
 ### New features
@@ -15,7 +19,7 @@
 
 * Initial Bioconductor submission.
 * Added methods for estimating longitudinal molecular trajectories using empirical, linear mixed-effects, generalized additive model (GAM), and maSigPro estimators.
-* Introduced Omics Trajectory Signatures (OTS) for classifying temporal molecular behaviour.
+* Introduced Ordinal Trajectory States (OTS) for classifying temporal molecular behaviour.
 * Implemented topology-aware clustering and cluster evaluation utilities.
 * Added a flexible topology-based query framework for retrieving molecular features matching simple or complex trajectory patterns across experimental groups and treatment arms.
 * Included publication-quality visualisation functions for trajectories, topology composition, and cluster summaries.

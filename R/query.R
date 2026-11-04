@@ -199,9 +199,9 @@ NOT <- function(x) {
 }
 
 
-#' Query Omics Trajectory Signature results
+#' Query Ordinal Trajectory State results
 #'
-#' Filters Omics Trajectory Signature assignments stored in a
+#' Filters Ordinal Trajectory State assignments stored in a
 #' `LongOmicsTraj` object.
 #'
 #' Queries may be restricted by molecular object type, assay, group,

@@ -65,8 +65,8 @@
 #' GLUCOLD LongOmicsTraj object with OTS results
 #'
 #' A processed `LongOmicsTraj` object containing model-estimated molecular
-#' trajectories, between-visit changes, thresholds and Omics Trajectory
-#' Signature assignments.
+#' trajectories, between-visit changes, thresholds and Ordinal Trajectory
+#' State assignments.
 #'
 #' @format A `LongOmicsTraj` object.
 #'

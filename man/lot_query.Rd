@@ -55,7 +55,7 @@ criteria.
 Creates an exclusion condition for use in `lot_query()`. Features whose
 topology labels match any value in `x` are excluded.
 
-Filters Omics Trajectory Signature assignments stored in a
+Filters Ordinal Trajectory State assignments stored in a
 `LongOmicsTraj` object.
 }
 \details{

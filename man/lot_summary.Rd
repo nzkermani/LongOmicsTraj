@@ -19,8 +19,8 @@ An object of class `lot_summary`. The object is a list containing
   OTS summaries.
 }
 \description{
-Summarises assays, study design, available estimators and Omics
-Trajectory Signature distributions stored in a `LongOmicsTraj` object.
+Summarises assays, study design, available estimators and Ordinal
+Trajectory State distributions stored in a `LongOmicsTraj` object.
 }
 \examples{
 data("lot_glucold_ots")
