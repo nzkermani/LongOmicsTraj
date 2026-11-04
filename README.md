@@ -17,8 +17,8 @@ Traditional methods can identify statistical changes or smooth temporal
 patterns, but their outputs are often difficult to translate into concise,
 biologically interpretable trajectory classes.
 
-LongOmicsTraj converts consecutive molecular changes into **Omics Trajectory
-Signatures (OTS)**, providing an interpretable description of longitudinal
+LongOmicsTraj converts consecutive molecular changes into **Ordinal Trajectory
+States (OTS)**, providing an interpretable description of longitudinal
 behaviour.
 
 ## Core idea
@@ -34,7 +34,7 @@ LongOmicsTraj therefore asks:
 
 > **Which molecular features share the same longitudinal trajectory topology?**
 
-## Omics Trajectory Signatures
+## Ordinal Trajectory States
 
 For three ordered visits, each feature receives a two-transition topology
 label.

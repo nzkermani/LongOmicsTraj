@@ -16,6 +16,6 @@ A data frame containing one row per clustered feature and its
 }
 \description{
 Combines molecular-feature-to-cluster relationships with feature-level
-Omics Trajectory Signature assignments.
+Ordinal Trajectory State assignments.
 }
 \keyword{internal}

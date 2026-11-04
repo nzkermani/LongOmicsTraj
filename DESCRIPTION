@@ -1,7 +1,7 @@
 Package: LongOmicsTraj
 Type: Package
 Title: Longitudinal Omics Trajectory Clustering and Analysis Engine
-Version: 0.99.1
+Version: 0.99.2
 Authors@R:
     person(
         given = "Nazanin",
@@ -16,7 +16,7 @@ Description: Provides methods for estimating, classifying and comparing
     longitudinal molecular trajectories across repeated study visits using
     empirical, mixed-effects, generalized additive model and polynomial
     regression estimators. Consecutive molecular changes are converted into
-    interpretable Omics Trajectory Signatures (OTS) describing stable,
+    interpretable Ordinal Trajectory States (OTS) describing stable,
     sustained, transient and rebound temporal behaviours, enabling topology-
     aware clustering and consensus trajectory inference. LongOmicsTraj further
     provides a flexible query framework for directly retrieving molecular

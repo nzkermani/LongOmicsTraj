@@ -2,7 +2,7 @@
 % Please edit documentation in R/lot_plot_ots_distribution.R
 \name{lot_plot_ots_distribution}
 \alias{lot_plot_ots_distribution}
-\title{Plot the distribution of Omics Trajectory Signatures}
+\title{Plot the distribution of Ordinal Trajectory States}
 \usage{
 lot_plot_ots_distribution(
   object,
@@ -25,7 +25,7 @@ A `ggplot` object.
 }
 \description{
 Summarises the proportion or number of molecular features assigned
-to each Omics Trajectory Signature within each group.
+to each Ordinal Trajectory State within each group.
 }
 \examples{
 data("lot_glucold_ots")

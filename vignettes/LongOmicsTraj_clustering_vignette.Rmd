@@ -31,8 +31,8 @@ representation and clustering. In this vignette, the packaged GLUCOLD example
 is used to demonstrate a complete topology-aware clustering workflow:
 
 1. construct visit-level empirical trajectories;
-2. calculate adjacent changes and assign feature-level Omics Trajectory
-   Signatures (OTS);
+2. calculate adjacent changes and assign feature-level Ordinal Trajectory
+   States (OTS);
 3. cluster genes using combined group-by-visit profiles;
 4. summarise topology composition and purity within clusters;
 5. evaluate topology coverage and duplication;

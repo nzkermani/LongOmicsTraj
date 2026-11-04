@@ -14,11 +14,11 @@ estimates.}
 thresholds.}
 }
 \value{
-A `DataFrame` containing Omics Trajectory Signature assignments.
+A `DataFrame` containing Ordinal Trajectory State assignments.
 }
 \description{
 Converts molecular deltas into transition states using feature-specific
-thresholds and combines those states into Omics Trajectory Signature
+thresholds and combines those states into Ordinal Trajectory State
 labels.
 }
 \keyword{internal}

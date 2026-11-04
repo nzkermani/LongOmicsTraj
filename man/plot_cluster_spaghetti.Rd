@@ -21,6 +21,6 @@ Invisibly returns a named list of `ggplot` objects.
 }
 \description{
 Creates one spaghetti plot per molecular-feature cluster. Individual
-feature trajectories are coloured by their Omics Trajectory Signature,
+feature trajectories are coloured by their Ordinal Trajectory State,
 while the cluster-level representative trajectory is shown in black.
 }

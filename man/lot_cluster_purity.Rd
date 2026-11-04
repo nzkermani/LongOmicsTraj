@@ -27,7 +27,7 @@ An object of class `lot_cluster_purity` containing:
 }
 }
 \description{
-Calculates the dominant Omics Trajectory Signature, topology purity
+Calculates the dominant Ordinal Trajectory State, topology purity
 and entropy within each cluster and clinical group.
 }
 \details{
