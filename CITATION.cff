@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use LongOmicsTraj, please cite it as below."
+title: "LongOmicsTraj: topology-based representation and querying of short longitudinal omics trajectories"
+type: software
+authors:
+  - family-names: "Zounemat-Kermani"
+    given-names: "Nazanin"
+    orcid: "https://orcid.org/0000-0003-2479-3861"
+    affiliation: "Imperial College London"
+license: GPL-3.0-only
+repository-code: "https://github.com/nzkermani/LongOmicsTraj"
+doi: "10.5281/zenodo.23920119"
