@@ -1,0 +1,21 @@
+{
+  "title": "LongOmicsTraj: topology-based representation and querying of short longitudinal omics trajectories",
+  "description": "R package for representing visit-level longitudinal omics estimates as Ordinal Trajectory States (OTS) and querying them across experimental groups.",
+  "upload_type": "software",
+  "creators": [
+    {
+      "name": "Zounemat-Kermani, Nazanin",
+      "affiliation": "National Heart & Lung Institute and Data Science Institute, Imperial College London, London, United Kingdom",
+      "orcid": "0000-0003-2479-3861"
+    }
+  ],
+  "license": "GPL-3.0-only",
+  "keywords": ["longitudinal omics", "trajectory topology", "time course", "transcriptomics", "Bioconductor", "R"],
+  "related_identifiers": [
+    {
+      "identifier": "10.64898/2026.08.18.745427",
+      "relation": "isSupplementTo",
+      "scheme": "doi"
+    }
+  ]
+}
